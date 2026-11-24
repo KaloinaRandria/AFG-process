@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -16,7 +18,14 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4 page-actions gap-2">
             <h1><i class="fas fa-users"></i> Utilisateurs</h1>
-            <a th:href="@{/user/add}" class="btn btn-gradient-blue"><i class="fas fa-user-plus me-1"></i> Insérer un utilisateur</a>
+            <div class="d-flex gap-2">
+                <a th:href="@{/user/demandes}" class="btn btn-outline-secondary">
+                    <i class="fas fa-user-check me-1"></i> Demandes
+                </a>
+                <a sec:authorize="hasRole('IT_MAKER')" th:href="@{/user/add}" class="btn btn-gradient-blue">
+                    <i class="fas fa-user-plus me-1"></i> Demande de création
+                </a>
+            </div>
         </div>
 
         <div class="card">
@@ -24,20 +33,26 @@
                 <div class="table-responsive">
                     <table id="tableUtilisateurs" class="table table-hover align-middle w-100">
                         <thead>
-                        <tr><th>Nom</th><th>Mail</th><th>Direction</th><th>Profil</th><th>Statut</th><th></th></tr>
+                        <tr><th>Nom</th><th>Mail</th><th>Direction</th><th>Rôles</th><th>Statut</th><th></th></tr>
                         </thead>
                         <tbody>
                         <tr th:each="u : ${utilisateurs}">
                             <td class="fw-bold" th:text="${u.nomComplet}"></td>
                             <td th:text="${u.mail}"></td>
                             <td th:text="${u.direction != null} ? ${u.direction.code} : '—'"></td>
-                            <td th:text="${u.admin} ? 'Administrateur' : 'Collaborateur'"></td>
+                            <td>
+                                <span th:each="r : ${u.codesRoles}" class="st-badge st-neutre me-1" th:text="${r}"></span>
+                                <span th:if="${u.codesRoles.isEmpty()}" class="text-muted small">Collaborateur</span>
+                            </td>
                             <td>
                                 <span class="st-badge" th:classappend="${u.actif} ? 'st-acquis' : 'st-neutre'"
                                       th:text="${u.actif} ? 'Actif' : 'Désactivé'"></span>
+                                <span th:if="${enAttente.contains(u.id)}" class="st-badge st-encours">Modification en attente</span>
                             </td>
                             <td class="text-end">
-                                <a th:href="@{/user/{id}/edit(id=${u.id})}" class="btn btn-sm btn-outline-secondary" title="Modifier">
+                                <a sec:authorize="hasRole('IT_MAKER')" th:unless="${enAttente.contains(u.id)}"
+                                   th:href="@{/user/{id}/edit(id=${u.id})}" class="btn btn-sm btn-outline-secondary"
+                                   title="Demande de modification">
                                     <i class="fas fa-pen"></i>
                                 </a>
                             </td>

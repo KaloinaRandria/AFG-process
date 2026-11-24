@@ -15,6 +15,7 @@ import org.springframework.security.web.WebAttributes;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 public class LoginController {
@@ -67,7 +68,8 @@ public class LoginController {
         return "index";
     }
 
-    @GetMapping("/error/403")
+    /** Toutes méthodes : un refus d'accès sur un POST est aussi renvoyé (forward) vers cette page. */
+    @RequestMapping("/error/403")
     public String accessDenied() {
         return "error/403";
     }

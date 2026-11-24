@@ -124,34 +124,30 @@
         </div>
 
         <!-- ═══════════════════ ADMINISTRATION ═══════════════════ -->
-        <div class="sidebar-groupe-menu" sec:authorize="hasAnyRole('ADMIN')">
+        <div class="sidebar-groupe-menu" sec:authorize="hasAnyRole('ADMIN', 'IT', 'IT_MAKER', 'CHECKER')">
         <div class="sidebar-categorie"><span>Administration</span></div>
 
-        <div class="accordion-item bg-transparent border-0">
+        <!-- Utilisateurs : équipe IT, circuit maker-checker -->
+        <div class="accordion-item bg-transparent border-0" sec:authorize="hasAnyRole('IT', 'IT_MAKER', 'CHECKER')">
             <h2 class="accordion-header">
                 <button class="accordion-button bg-transparent text-start text-white sidebar-button collapsed"
                         type="button"
                         data-bs-toggle="collapse"
                         data-bs-target="#collapseUtilisateur"
                         aria-expanded="false"
-                        aria-controls="collapseUtilisateur"
-                        th:classappend="${currentUri.startsWith('/user') ? '' : 'collapsed'}">
-                    <i class="fas fa-users-cog me-3"></i> Utilisateurs &amp; directions
+                        aria-controls="collapseUtilisateur">
+                    <i class="fas fa-users-cog me-3"></i> Utilisateurs
+                    <span th:if="${nbDemandesEnAttente != null and nbDemandesEnAttente > 0}"
+                          class="badge rounded-pill bg-warning text-dark ms-2" th:text="${nbDemandesEnAttente}"
+                          title="Demandes à valider"></span>
                 </button>
             </h2>
             <div id="collapseUtilisateur"
                  class="accordion-collapse collapse"
                  data-bs-parent="#sidebarAccordion"
-                 th:classappend="${currentUri.startsWith('/user') or currentUri.startsWith('/direction') ? 'show' : ''}">
+                 th:classappend="${currentUri.startsWith('/user') ? 'show' : ''}">
                 <div class="accordion-body p-0">
                     <ul class="nav flex-column px-3">
-                        <li>
-                            <a class="nav-link text-white sidebar-sub"
-                               th:href="@{/user/add}"
-                               th:classappend="${currentUri == '/user/add' ? 'active' : ''}">
-                                <i class="fas fa-user-plus me-2"></i> Insérer un utilisateur
-                            </a>
-                        </li>
                         <li>
                             <a class="nav-link text-white sidebar-sub"
                                th:href="@{/user/list}"
@@ -159,16 +155,34 @@
                                 <i class="fas fa-list me-2"></i> Liste des utilisateurs
                             </a>
                         </li>
+                        <li sec:authorize="hasRole('IT_MAKER')">
+                            <a class="nav-link text-white sidebar-sub"
+                               th:href="@{/user/add}"
+                               th:classappend="${currentUri == '/user/add' ? 'active' : ''}">
+                                <i class="fas fa-user-plus me-2"></i> Demande de création
+                            </a>
+                        </li>
                         <li>
                             <a class="nav-link text-white sidebar-sub"
-                               th:href="@{/direction/list}"
-                               th:classappend="${currentUri == '/direction/list' ? 'active' : ''}">
-                                <i class="fas fa-sitemap me-2"></i> Directions
+                               th:href="@{/user/demandes}"
+                               th:classappend="${currentUri.startsWith('/user/demande') ? 'active' : ''}">
+                                <i class="fas fa-user-check me-2"></i> Demandes
+                                <span th:if="${nbDemandesEnAttente != null and nbDemandesEnAttente > 0}"
+                                      class="badge rounded-pill bg-warning text-dark ms-1" th:text="${nbDemandesEnAttente}"></span>
                             </a>
                         </li>
                     </ul>
                 </div>
             </div>
+        </div>
+
+        <!-- Directions : administrateur fonctionnel -->
+        <div class="px-1" sec:authorize="hasRole('ADMIN')">
+            <a class="nav-link text-white d-flex align-items-center sidebar-link"
+               th:href="@{/direction/list}"
+               th:classappend="${currentUri.startsWith('/direction') ? 'active' : ''}">
+                <i class="fas fa-sitemap me-3"></i> Directions
+            </a>
         </div>
         </div>
     </div>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="|Demande n°${demande.id}|">Demande</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+    <style>
+        .diff-change { background: #fff4e0; }
+        .diff-change td:last-child { font-weight: 700; }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section style="max-width: 980px" th:with="d=${demande}, a=${actuel}">
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="d-flex justify-content-between align-items-start mb-4 page-actions gap-2">
+            <div>
+                <div class="pr-ref" th:text="|Demande n°${d.id} · ${d.type.libelle}|"></div>
+                <h1 class="mb-1"><i class="fas fa-user-check"></i> <span th:text="${d.mail}"></span></h1>
+                <span class="st-badge"
+                      th:classappend="${d.enAttente} ? 'st-encours' : (${d.statut.name() == 'VALIDEE'} ? 'st-acquis' : (${d.statut.name() == 'REJETEE'} ? 'st-formation' : 'st-neutre'))"
+                      th:text="${d.statut.libelle}"></span>
+            </div>
+            <a th:href="@{/user/demandes}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Demandes</a>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0" th:text="${a != null} ? 'Modifications demandées' : 'Valeurs demandées'"></h6>
+                    </div>
+                    <div class="card-body p-0 table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th style="width: 22%"></th>
+                                <th th:if="${a != null}">Actuel</th>
+                                <th>Demandé</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:classappend="${a != null and a.mail != d.mail} ? 'diff-change'">
+                                <th>Mail</th><td th:if="${a != null}" th:text="${a.mail}"></td><td th:text="${d.mail}"></td>
+                            </tr>
+                            <tr th:classappend="${a != null and a.prenom != d.prenom} ? 'diff-change'">
+                                <th>Prénom</th><td th:if="${a != null}" th:text="${a.prenom} ?: '—'"></td><td th:text="${d.prenom} ?: '—'"></td>
+                            </tr>
+                            <tr th:classappend="${a != null and a.nom != d.nom} ? 'diff-change'">
+                                <th>Nom</th><td th:if="${a != null}" th:text="${a.nom} ?: '—'"></td><td th:text="${d.nom} ?: '—'"></td>
+                            </tr>
+                            <tr th:with="dirA=${a != null and a.direction != null} ? ${a.direction.nomAffiche} : '—',
+                                         dirD=${d.direction != null} ? ${d.direction.nomAffiche} : '—'"
+                                th:classappend="${a != null and dirA != dirD} ? 'diff-change'">
+                                <th>Direction</th><td th:if="${a != null}" th:text="${dirA}"></td><td th:text="${dirD}"></td>
+                            </tr>
+                            <tr th:classappend="${a != null and a.actif != d.actif} ? 'diff-change'">
+                                <th>Statut</th>
+                                <td th:if="${a != null}" th:text="${a.actif} ? 'Actif' : 'Désactivé'"></td>
+                                <td th:text="${d.actif} ? 'Actif' : 'Désactivé'"></td>
+                            </tr>
+                            <tr th:classappend="${a != null and !a.codesRoles.equals(d.roles)} ? 'diff-change'">
+                                <th>Rôles</th>
+                                <td th:if="${a != null}">
+                                    <span th:each="r : ${a.codesRoles}" class="st-badge st-neutre me-1" th:text="${r}"></span>
+                                    <span th:if="${a.codesRoles.isEmpty()}">Collaborateur</span>
+                                </td>
+                                <td>
+                                    <span th:each="r : ${d.roles}" class="st-badge st-neutre me-1" th:text="${r}"></span>
+                                    <span th:if="${d.roles.isEmpty()}">Collaborateur</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card mb-3">
+                    <div class="card-header"><h6 class="mb-0">Circuit de validation</h6></div>
+                    <div class="card-body small">
+                        <div class="mb-2">
+                            <span class="text-muted">Saisie (maker) :</span>
+                            <b th:text="${d.maker.nomComplet}"></b>
+                            le <span th:text="${#temporals.format(d.dateDemande, 'dd/MM/yyyy à HH:mm')}"></span>
+                        </div>
+                        <div th:unless="${d.enAttente}">
+                            <span class="text-muted" th:text="${d.checker != null} ? 'Traitement (checker) :' : 'Annulée :'"></span>
+                            <b th:if="${d.checker != null}" th:text="${d.checker.nomComplet}"></b>
+                            le <span th:text="${#temporals.format(d.dateTraitement, 'dd/MM/yyyy à HH:mm')}"></span>
+                            <div class="mt-2" th:if="${d.commentaire}">
+                                <span class="text-muted" th:text="${d.statut.name() == 'REJETEE'} ? 'Motif du rejet :' : 'Commentaire :'"></span>
+                                <div style="white-space: pre-line" th:text="${d.commentaire}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Checker : validation ou rejet -->
+                <div class="card mb-3" th:if="${d.enAttente}" sec:authorize="hasRole('CHECKER')">
+                    <div class="card-header"><h6 class="mb-0"><i class="fas fa-gavel me-2"></i>Décision</h6></div>
+                    <div class="card-body">
+                        <div th:if="${empechement}" class="alert alert-warning small mb-0">
+                            <i class="fas fa-user-lock"></i> <span th:text="${empechement}"></span>
+                        </div>
+                        <th:block th:unless="${empechement}">
+                            <form th:action="@{/user/demande/{id}/valider(id=${d.id})}" method="post" class="mb-3"
+                                  data-confirmer="Valider cette demande ?"
+                                  th:attr="data-confirmer-texte=${d.type.name() == 'CREATION'} ? 'Le compte sera créé.' : 'Le compte sera modifié.'"
+                                  data-confirmer-bouton="Valider" data-chargement="Validation…">
+                                <label class="form-label" for="commentaire">Commentaire (facultatif)</label>
+                                <textarea class="form-control mb-2" id="commentaire" name="commentaire" rows="2" maxlength="1000"></textarea>
+                                <button type="submit" class="btn btn-gradient-green w-100">
+                                    <i class="fas fa-check me-1"></i> Valider
+                                </button>
+                            </form>
+                            <form th:action="@{/user/demande/{id}/rejeter(id=${d.id})}" method="post"
+                                  data-confirmer="Rejeter cette demande ?" data-confirmer-type="danger"
+                                  data-confirmer-bouton="Rejeter" data-chargement="Rejet…">
+                                <label class="form-label" for="motif">Motif du rejet *</label>
+                                <textarea class="form-control mb-2" id="motif" name="motif" rows="2" maxlength="1000" required></textarea>
+                                <button type="submit" class="btn btn-outline-danger w-100">
+                                    <i class="fas fa-times me-1"></i> Rejeter
+                                </button>
+                            </form>
+                        </th:block>
+                    </div>
+                </div>
+
+                <!-- Maker : annulation de sa propre demande -->
+                <form th:if="${d.enAttente and d.maker.id == moi.id}" sec:authorize="hasRole('IT_MAKER')"
+                      th:action="@{/user/demande/{id}/annuler(id=${d.id})}" method="post"
+                      data-confirmer="Annuler votre demande ?" data-confirmer-type="warning" data-confirmer-bouton="Annuler la demande">
+                    <button type="submit" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-undo me-1"></i> Annuler ma demande
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>
