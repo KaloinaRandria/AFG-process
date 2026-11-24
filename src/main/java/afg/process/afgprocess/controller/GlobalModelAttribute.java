@@ -26,10 +26,10 @@ public class GlobalModelAttribute {
         model.addAttribute("currentUri", uri.isEmpty() ? "/" : uri);
     }
 
-    /** Nombre de demandes d'utilisateurs à valider, affiché dans le menu des CHECKER. */
+    /** Nombre de demandes d'utilisateurs à valider, affiché dans le menu des IT_CHECKER. */
     @ModelAttribute
     public void addDemandesEnAttente(@AuthenticationPrincipal Utilisateur moi, Model model) {
-        if (moi != null && moi.hasRole(RoleApplication.CHECKER)) {
+        if (moi != null && moi.hasRole(RoleApplication.IT_CHECKER)) {
             model.addAttribute("nbDemandesEnAttente", demandeService.nbEnAttente());
         }
     }

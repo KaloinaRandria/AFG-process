@@ -105,7 +105,7 @@
                 </div>
 
                 <!-- Checker : validation ou rejet -->
-                <div class="card mb-3" th:if="${d.enAttente}" sec:authorize="hasRole('CHECKER')">
+                <div class="card mb-3" th:if="${d.enAttente}" sec:authorize="hasRole('IT_CHECKER')">
                     <div class="card-header"><h6 class="mb-0"><i class="fas fa-gavel me-2"></i>Décision</h6></div>
                     <div class="card-body">
                         <div th:if="${empechement}" class="alert alert-warning small mb-0">

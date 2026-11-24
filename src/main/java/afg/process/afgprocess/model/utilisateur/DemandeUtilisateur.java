@@ -13,7 +13,7 @@ import java.util.TreeSet;
 /**
  * Demande de création ou de modification d'un utilisateur (maker-checker).
  * Elle contient les valeurs proposées ; le compte n'est créé ou modifié
- * qu'au moment de la validation par un CHECKER différent du maker.
+ * qu'au moment de la validation par un IT_CHECKER différent du maker.
  */
 @Getter
 @Setter

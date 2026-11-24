@@ -51,8 +51,8 @@
                             <td th:text="${#temporals.format(d.dateDemande, 'dd/MM/yyyy HH:mm')}"></td>
                             <td class="text-end">
                                 <a th:href="@{/user/demande/{id}(id=${d.id})}" class="btn btn-sm btn-gradient-blue">
-                                    <span sec:authorize="hasRole('CHECKER')">Examiner</span>
-                                    <span sec:authorize="!hasRole('CHECKER')">Voir</span>
+                                    <span sec:authorize="hasRole('IT_CHECKER')">Examiner</span>
+                                    <span sec:authorize="!hasRole('IT_CHECKER')">Voir</span>
                                 </a>
                             </td>
                         </tr>

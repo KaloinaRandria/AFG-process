@@ -124,11 +124,11 @@
         </div>
 
         <!-- ═══════════════════ ADMINISTRATION ═══════════════════ -->
-        <div class="sidebar-groupe-menu" sec:authorize="hasAnyRole('ADMIN', 'IT', 'IT_MAKER', 'CHECKER')">
+        <div class="sidebar-groupe-menu" sec:authorize="hasAnyRole('ADMIN', 'IT', 'IT_MAKER', 'IT_CHECKER')">
         <div class="sidebar-categorie"><span>Administration</span></div>
 
         <!-- Utilisateurs : équipe IT, circuit maker-checker -->
-        <div class="accordion-item bg-transparent border-0" sec:authorize="hasAnyRole('IT', 'IT_MAKER', 'CHECKER')">
+        <div class="accordion-item bg-transparent border-0" sec:authorize="hasAnyRole('IT', 'IT_MAKER', 'IT_CHECKER')">
             <h2 class="accordion-header">
                 <button class="accordion-button bg-transparent text-start text-white sidebar-button collapsed"
                         type="button"

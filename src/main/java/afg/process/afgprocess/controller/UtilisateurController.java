@@ -20,12 +20,12 @@ import java.util.List;
 
 /**
  * Gestion des utilisateurs par l'IT, en maker-checker :
- * IT (consultation), IT_MAKER (saisie des demandes), CHECKER (validation / rejet).
+ * IT (consultation), IT_MAKER (saisie des demandes), IT_CHECKER (validation / rejet).
  * Le mot de passe reste vérifié par l'Active Directory : seuls le mail, l'identité et les rôles sont gérés ici.
  */
 @Controller
 @RequestMapping("/user")
-@PreAuthorize("hasAnyRole('IT', 'IT_MAKER', 'CHECKER')")
+@PreAuthorize("hasAnyRole('IT', 'IT_MAKER', 'IT_CHECKER')")
 public class UtilisateurController {
 
     private final UtilisateurService utilisateurService;
@@ -39,7 +39,7 @@ public class UtilisateurController {
         this.directionService = directionService;
     }
 
-    // ── Consultation (IT, IT_MAKER, CHECKER) ─────────────────────────────────
+    // ── Consultation (IT, IT_MAKER, IT_CHECKER) ─────────────────────────────────
 
     @GetMapping("/list")
     public String list(Model model) {
@@ -93,7 +93,7 @@ public class UtilisateurController {
         try {
             DemandeUtilisateur d = demandeService.soumettre(moi, id, mail, nom, prenom, idDirection, roles, actif);
             ra.addFlashAttribute("ok", "Demande de " + d.getType().getLibelle().toLowerCase() + " pour <b>"
-                    + HtmlUtils.htmlEscape(d.getMail()) + "</b> enregistrée.<br>Elle doit maintenant être validée par un CHECKER.");
+                    + HtmlUtils.htmlEscape(d.getMail()) + "</b> enregistrée.<br>Elle doit maintenant être validée par un IT_CHECKER.");
             return "redirect:/user/demande/" + d.getId();
         } catch (MetierException e) {
             ra.addFlashAttribute("ko", HtmlUtils.htmlEscape(e.getMessage()));
@@ -109,9 +109,9 @@ public class UtilisateurController {
         return "redirect:/user/demandes";
     }
 
-    // ── Validation (CHECKER) ─────────────────────────────────────────────────
+    // ── Validation (IT_CHECKER) ─────────────────────────────────────────────────
 
-    @PreAuthorize("hasRole('CHECKER')")
+    @PreAuthorize("hasRole('IT_CHECKER')")
     @PostMapping("/demande/{id:\\d+}/valider")
     public String valider(@PathVariable Integer id, @RequestParam(required = false) String commentaire,
                           @AuthenticationPrincipal Utilisateur moi, RedirectAttributes ra) {
@@ -125,7 +125,7 @@ public class UtilisateurController {
         return "redirect:/user/demande/" + id;
     }
 
-    @PreAuthorize("hasRole('CHECKER')")
+    @PreAuthorize("hasRole('IT_CHECKER')")
     @PostMapping("/demande/{id:\\d+}/rejeter")
     public String rejeter(@PathVariable Integer id, @RequestParam(required = false) String motif,
                           @AuthenticationPrincipal Utilisateur moi, RedirectAttributes ra) {
