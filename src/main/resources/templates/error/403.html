@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Accès refusé</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section class="text-center py-5">
+        <h1><i class="fas fa-ban text-danger"></i> Accès refusé</h1>
+        <p class="text-muted">Vous n'avez pas les droits nécessaires pour accéder à cette page.</p>
+        <a class="btn btn-primary" th:href="@{/}">Retour à l'accueil</a>
+    </section>
+</div>
+</body>
+</html>

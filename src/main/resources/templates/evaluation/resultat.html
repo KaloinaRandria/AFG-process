@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Résultat du quiz</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section style="max-width: 880px"
+             th:with="e=${evaluation}, p=${evaluation.procedure}, proprietaire=${evaluation.utilisateur.id == moi.id}">
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="mb-4">
+            <div class="pr-ref">
+                <span th:text="${p.reference}"></span> · <span th:text="${p.direction.nomAffiche}"></span>
+            </div>
+            <h1 class="mb-1"><i class="fas fa-poll"></i> Résultat du quiz</h1>
+            <div class="text-muted">
+                <span th:text="${p.titre}"></span> —
+                <span th:unless="${proprietaire}"><b th:text="${e.utilisateur.nomComplet}"></b> — </span>
+                <span th:text="${#temporals.format(e.dateFin, 'dd/MM/yyyy à HH:mm')}"></span>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row align-items-center g-4">
+                    <div class="col-md-4 text-center">
+                        <div class="score" th:classappend="${e.formationRequise} ? 'formation' : 'acquis'">
+                            <div>
+                                <div class="score-note" th:text="${e.note}"></div>
+                                <div class="score-sur">sur <span th:text="${e.nbQuestions}"></span></div>
+                            </div>
+                        </div>
+                        <div class="small text-muted mt-2">
+                            soit <b th:text="${#numbers.formatDecimal(e.noteSur20, 1, 1, 'COMMA')}"></b> / 20
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <span class="st-badge fs-6 mb-2" th:classappend="${e.formationRequise} ? 'st-formation' : 'st-acquis'">
+                            <i class="fas" th:classappend="${e.formationRequise} ? 'fa-chalkboard-teacher' : 'fa-check-circle'"></i>
+                            <span th:text="${e.resultat.libelle}"></span>
+                        </span>
+                        <p class="mb-2 mt-2" th:if="${e.formationRequise}">
+                            La note obtenue est inférieure au minimum requis
+                            (<b th:text="|${e.seuil}/${e.nbQuestions}|"></b>) :
+                            <b th:text="${proprietaire} ? 'vous devez suivre la formation sur cette procédure.' : 'la formation sur cette procédure est requise.'"></b>
+                        </p>
+                        <p class="mb-2 mt-2" th:unless="${e.formationRequise}">
+                            La note atteint le minimum requis (<b th:text="|${e.seuil}/${e.nbQuestions}|"></b>) :
+                            <b>la procédure est acquise</b>, aucune formation n'est nécessaire.
+                        </p>
+                        <div class="d-flex flex-wrap gap-2 mt-3" th:if="${proprietaire}">
+                            <a th:href="@{/procedure/{id}(id=${p.id})}" class="btn"
+                               th:classappend="${e.formationRequise} ? 'btn-gradient-blue' : 'btn-outline-secondary'">
+                                <i class="fas fa-file-pdf me-1"></i>
+                                <span th:text="${e.formationRequise} ? 'Suivre la formation (lire la procédure)' : 'Revoir la procédure'"></span>
+                            </a>
+                            <form th:action="@{/evaluation/demarrer/{id}(id=${p.id})}" method="post"
+                                  data-chargement="Préparation du quiz…">
+                                <button type="submit" class="btn btn-outline-secondary">
+                                    <i class="fas fa-redo me-1"></i> Repasser le quiz
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-5">
+            <div class="card-header"><h6 class="mb-0">Détail des réponses</h6></div>
+            <div class="card-body py-1">
+                <div class="rep-ligne" th:each="r : ${e.reponses}">
+                    <div class="rep-icone" th:classappend="${r.correct} ? 'ok' : 'ko'">
+                        <i class="fas" th:classappend="${r.correct} ? 'fa-check' : 'fa-times'"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="white-space: pre-line">
+                            <span th:text="${r.ordre} + '. '"></span><span th:text="${r.question.enonce}"></span>
+                        </div>
+                        <div class="small text-muted">
+                            Réponse donnée :
+                            <span th:if="${r.choix != null}" th:text="${r.choix.libelle}"></span>
+                            <i th:if="${r.choix == null}">aucune</i>
+                        </div>
+                        <!-- Bonne réponse : visible des administrateurs seulement (la banque de questions reste valable) -->
+                        <div class="small text-success" sec:authorize="hasRole('ADMIN')" th:unless="${r.correct}">
+                            Bonne réponse :
+                            <th:block th:each="c : ${r.question.choix}"><span th:if="${c.correct}" th:text="${c.libelle}"></span></th:block>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

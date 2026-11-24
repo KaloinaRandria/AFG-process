@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quiz</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section style="max-width: 880px">
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="mb-2">
+            <div class="pr-ref">
+                <span th:text="${quiz.procedureReference}"></span> · <span th:text="${quiz.direction}"></span>
+            </div>
+            <h1 class="mb-1"><i class="fas fa-clipboard-check"></i> <span th:text="${quiz.procedureTitre}"></span></h1>
+            <div class="text-muted">
+                <span th:text="${#lists.size(quiz.questions)}"></span> questions, une seule bonne réponse par question.
+                Note minimale pour valider : <b th:text="|${quiz.seuil}/${#lists.size(quiz.questions)}|"></b>.
+            </div>
+        </div>
+
+        <form id="formQuiz" th:action="@{/evaluation/{id}/soumettre(id=${quiz.idEvaluation})}" method="post"
+              data-chargement="Correction…">
+            <div class="quiz-barre d-flex justify-content-between align-items-center">
+                <div>
+                    Réponses : <b id="nbRepondu">0</b> / <span th:text="${#lists.size(quiz.questions)}"></span>
+                    <div class="progress mt-1" style="height: 6px; width: 220px">
+                        <div id="barre" class="progress-bar" style="width: 0; background: var(--ui-brand-2)"></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-gradient-green px-4">
+                    <i class="fas fa-paper-plane me-1"></i> Soumettre
+                </button>
+            </div>
+
+            <div class="card quiz-question mb-3" th:each="q : ${quiz.questions}">
+                <div class="card-body">
+                    <div class="quiz-numero">Question <span th:text="${q.numero}"></span> / <span th:text="${#lists.size(quiz.questions)}"></span></div>
+                    <div class="quiz-enonce" th:text="${q.enonce}"></div>
+                    <label class="quiz-choix" th:each="c : ${q.choix}">
+                        <input class="form-check-input" type="radio" th:name="|reponse_${q.idReponse}|" th:value="${c.id}">
+                        <span th:text="${c.libelle}"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="text-end mb-5">
+                <button type="submit" class="btn btn-gradient-green btn-lg px-5">
+                    <i class="fas fa-paper-plane me-1"></i> Soumettre mes réponses
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+<script>
+    (function () {
+        const form = document.getElementById('formQuiz');
+        const total = form.querySelectorAll('.quiz-question').length;
+        let envoi = false;
+
+        const repondues = () => new Set(Array.from(form.querySelectorAll('input[type=radio]:checked')).map(r => r.name)).size;
+        const maj = () => {
+            const n = repondues();
+            document.getElementById('nbRepondu').textContent = n;
+            document.getElementById('barre').style.width = (100 * n / total) + '%';
+        };
+        form.addEventListener('change', maj);
+        maj();
+
+        // Confirmation avant envoi (avertit s'il reste des questions sans réponse)
+        form.addEventListener('submit', function (e) {
+            const manquantes = total - repondues();
+            confirmerEnvoi(e, {
+                titre: 'Soumettre vos réponses ?',
+                texte: manquantes > 0
+                    ? '<b>' + manquantes + ' question(s) sans réponse</b> seront comptées comme fausses.'
+                    : 'Vous ne pourrez plus modifier vos réponses.',
+                bouton: 'Soumettre',
+                type: manquantes > 0 ? 'warning' : 'question'
+            });
+            if (!e.defaultPrevented) envoi = true;
+        }, true);
+
+        // Avertissement si l'on quitte la page avec des réponses non envoyées
+        window.addEventListener('beforeunload', function (e) {
+            if (!envoi && repondues() > 0) { e.preventDefault(); e.returnValue = ''; }
+        });
+    })();
+</script>
+</body>
+</html>

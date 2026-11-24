@@ -1,0 +1,1469 @@
+@charset "UTF-8";
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Feuille de style de l'application (chargée par fragment/load_css)
+
+   1. Mise en page : sidebar, contenu, modales
+   2. Textes et icônes en dégradé
+   3. Boutons
+   4. Formulaires : Select2, autocomplétion, dépôt de fichiers
+   5. Tableaux : entête en dégradé, DataTables
+   6. Badges de statut et suivi de validation
+   7. Tableau de bord
+   8. État de stock : couleurs, alertes, notifications, historique
+   9. Documents : bon de livraison, bon de sortie, demande
+   10. Impression
+
+   Couleurs de la charte : bleu #001051 → #00129f, vert #00AD00 / #28a745,
+   rouge #dc3545, orange #f97316.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ── 1. Mise en page ──────────────────────────────────────────────────────── */
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────────
+   Ordinateur : 270px, repliable en barre d'icônes (bouton en haut du menu, choix mémorisé) ;
+   repliée, elle se déplie au survol par-dessus le contenu.
+   Mobile (≤ 768px) : menu coulissant, ouvert par le bouton ☰ (fixe en haut à gauche). */
+:root {
+    --sidebar-largeur: 270px;
+    --sidebar-reduite: 72px;
+}
+
+#sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-largeur);
+    height: 100vh;
+    z-index: 1000 !important;
+    overflow-x: hidden;
+    transition: width .2s ease, transform .25s ease, box-shadow .2s ease;
+}
+
+/* Contenu principal décalé de la largeur de la sidebar */
+.main-content {
+    margin-left: var(--sidebar-largeur) !important;
+    padding: 25px;
+    min-height: 100vh;
+    background: #f8f9fa;
+    position: relative;
+    z-index: 1 !important;
+    transition: margin-left .2s ease;
+}
+
+/* En-tête du menu : logo + bouton replier / fermer */
+.sidebar-entete {
+    position: relative;
+}
+.sidebar-bascule {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .08);
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, transform .2s;
+}
+.sidebar-bascule:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+
+/* Bouton ☰ et voile : mobile seulement (créés par le script du menu) */
+.sidebar-burger,
+.sidebar-voile { display: none; }
+
+@media (min-width: 769px) {
+    html.sidebar-reduit .main-content { margin-left: var(--sidebar-reduite) !important; }
+    html.sidebar-reduit .sidebar-bascule { transform: rotate(180deg); }
+
+    /* Repliée : icônes seules (le texte des liens passe à 0, les icônes gardent leur taille) */
+    html.sidebar-reduit #sidebar:not(:hover) { width: var(--sidebar-reduite); }
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-link,
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-button {
+        font-size: 0;
+        justify-content: center;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-link > i,
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-button > i {
+        font-size: 1.1rem;
+        margin-right: 0 !important;
+    }
+    html.sidebar-reduit #sidebar:not(:hover) .px-3,
+    html.sidebar-reduit #sidebar:not(:hover) .px-2 { padding-left: .4rem !important; padding-right: .4rem !important; }
+    html.sidebar-reduit #sidebar:not(:hover) .accordion-button::after,
+    html.sidebar-reduit #sidebar:not(:hover) .accordion-collapse,
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-titre,
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-utilisateur-nom,
+    html.sidebar-reduit #sidebar:not(:hover) .dropdown-toggle::after { display: none !important; }
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-logo { padding-top: .5rem !important; padding-bottom: .75rem !important; }
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-logo img { height: auto; max-width: 48px; }
+    html.sidebar-reduit #sidebar:not(:hover) { scrollbar-width: thin; }
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-bascule { position: static; margin: 0 auto 10px; }
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-entete { display: flex; flex-direction: column-reverse; }
+    html.sidebar-reduit #sidebar:not(:hover) .dropdown > a { justify-content: center; }
+    html.sidebar-reduit #sidebar:not(:hover) .dropdown > a img { margin-right: 0 !important; }
+
+    /* Dépliée au survol : par-dessus le contenu */
+    html.sidebar-reduit #sidebar:hover { box-shadow: 6px 0 24px rgba(10, 26, 68, .35); }
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        width: min(var(--sidebar-largeur), 85vw);
+        transform: translateX(-100%);
+        z-index: 1035 !important;
+    }
+    html.sidebar-ouvert #sidebar {
+        transform: none;
+        box-shadow: 6px 0 24px rgba(10, 26, 68, .35);
+    }
+
+    html .main-content {
+        margin-left: 0 !important;
+        padding-top: 64px !important;
+    }
+
+    .sidebar-burger {
+        display: flex;
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 1030;
+        width: 42px;
+        height: 42px;
+        border: 0;
+        border-radius: 10px;
+        background: #0A1A44;
+        color: #fff;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(10, 26, 68, .3);
+    }
+    .sidebar-voile {
+        position: fixed;
+        inset: 0;
+        z-index: 1032;
+        background: rgba(10, 26, 68, .45);
+    }
+    html.sidebar-ouvert .sidebar-voile { display: block; }
+}
+
+/* Entrées actives du menu */
+/* ── Loader de navigation ─────────────────────────────────────────────────────
+   Barre fine en haut de l'écran dès qu'on quitte la page ; si la page suivante tarde,
+   un petit indicateur « Chargement… » apparaît. Créés par le script du menu latéral. */
+.nav-loader-barre {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 2000;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s ease;
+}
+.nav-loader-barre::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -40%;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, #2563eb, #60a5fa, transparent);
+    animation: nav-loader-glisse 1s ease-in-out infinite;
+}
+@keyframes nav-loader-glisse {
+    from { left: -40%; }
+    to   { left: 100%; }
+}
+
+.nav-loader-badge {
+    position: fixed;
+    top: 8px;
+    /* Centré sur la zone de contenu (à droite du menu) */
+    left: calc(50% + var(--sidebar-largeur) / 2);
+    z-index: 2000;
+    transform: translate(-50%, -8px);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem .85rem;
+    border-radius: 999px;
+    background: #0A1A44;
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(10, 26, 68, .25);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s ease, transform .2s ease;
+}
+.nav-loader-badge .spinner-border { width: .9rem; height: .9rem; border-width: .14em; }
+
+html.sidebar-reduit .nav-loader-badge { left: calc(50% + var(--sidebar-reduite) / 2); }
+@media (max-width: 768px) {
+    .nav-loader-badge, html.sidebar-reduit .nav-loader-badge { left: 50%; top: 62px; }
+}
+
+html.nav-en-cours .nav-loader-barre { opacity: 1; }
+html.nav-lente .nav-loader-badge { opacity: 1; transform: translate(-50%, 0); }
+html.nav-en-cours, html.nav-en-cours * { cursor: progress !important; }
+
+@media print {
+    .nav-loader-barre, .nav-loader-badge { display: none !important; }
+}
+
+/* ── Catégories du menu : titres et filets en blanc atténué ──────────────────── */
+.sidebar-groupe-menu { --accent: rgba(255, 255, 255, .6); }
+
+.sidebar-groupe-menu + .sidebar-groupe-menu { margin-top: .35rem; }
+
+.sidebar-categorie {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin: .9rem .75rem .35rem;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+}
+/* Filet après le titre, dans la couleur du groupe */
+.sidebar-categorie::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: .45;
+}
+
+.sidebar-groupe-menu .sidebar-link:hover,
+.sidebar-groupe-menu .sidebar-button:hover {
+    background: rgba(255, 255, 255, .06) !important;
+}
+
+/* Menu replié : le titre devient un simple filet de couleur entre les groupes */
+@media (min-width: 769px) {
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-categorie {
+        margin: .7rem .9rem .3rem;
+        height: 2px;
+        font-size: 0;
+        gap: 0;
+        background: var(--accent);
+        opacity: .5;
+        border-radius: 2px;
+    }
+    html.sidebar-reduit #sidebar:not(:hover) .sidebar-categorie::after { display: none; }
+}
+
+/* Sous-menu regroupé (Demande d'achat) : titres de groupe, liens pleine largeur */
+.sidebar-sous-menu {
+    padding: .25rem .5rem .6rem 1rem;
+}
+.sidebar-sous-menu .sidebar-groupe {
+    margin: .7rem 0 .2rem;
+    padding: 0 .6rem;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #93a4c3;
+}
+.sidebar-sous-menu .sidebar-groupe:first-child { margin-top: .25rem; }
+.sidebar-sous-menu .sidebar-sub {
+    padding: .42rem .6rem;
+    margin-left: .35rem;
+    border-left: 2px solid rgba(255, 255, 255, .12);
+    border-radius: 0 6px 6px 0;
+    font-size: .9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sidebar-sous-menu .sidebar-sub:hover {
+    background: rgba(255, 255, 255, .08);
+}
+
+/* Entrée active : fond blanc léger et liseré à gauche (sobre, sans dégradé ni ombre) */
+.sidebar-sub.active,
+.sidebar-link.active {
+    background: rgba(255, 255, 255, .12) !important;
+    color: #fff !important;
+    border-radius: 6px;
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 rgba(255, 255, 255, .9);
+}
+/* Sous-menu : le liseré remplace le trait vertical du groupe */
+.sidebar-sous-menu .sidebar-sub.active {
+    border-left-color: rgba(255, 255, 255, .9);
+    box-shadow: none;
+    border-radius: 0 6px 6px 0;
+}
+
+/* Sous-menu ouvert : titre en blanc, fond à peine marqué */
+.accordion-button:not(.collapsed) {
+    background: rgba(255, 255, 255, .05) !important;
+    font-weight: 600;
+    color: #fff !important;
+    box-shadow: none;
+}
+
+/* Chevrons des sous-menus en blanc (Bootstrap les dessine sombres, peu visibles sur le fond bleu nuit) */
+#sidebar .accordion-button::after {
+    filter: brightness(0) invert(1);
+    opacity: .55;
+}
+
+/* Modales au-dessus de tout */
+.modal-backdrop {
+    z-index: 1040 !important;
+    opacity: 0.4;
+}
+
+.modal {
+    z-index: 1060 !important;
+    pointer-events: auto !important;
+}
+
+.modal .badge {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+}
+
+/* Barre de titre et d'actions des fiches */
+.page-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.doc-wrapper {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.mobile-search-container {
+    margin-bottom: 15px;
+}
+
+
+/* ── 2. Textes et icônes en dégradé ───────────────────────────────────────── */
+
+.text-gradient-blue,
+.icon-gradient-blue {
+    background: linear-gradient(45deg, #001051, #00129f);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.icon-gradient-light-blue {
+    background: linear-gradient(45deg, #0d6efd, #4cc9f0, #6ae2ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.bg-gradient-blue {
+    background: linear-gradient(45deg, #001051, #00129f) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.modal-header.bg-gradient-blue {
+    background: linear-gradient(90deg, #001051, #00129f) !important;
+}
+
+
+/* ── 3. Boutons ───────────────────────────────────────────────────────────── */
+
+/* Couleurs (avant la base commune : ses effets de survol l'emportent sur ceux du vert) */
+.btn-gradient-blue {
+    background: linear-gradient(45deg, #001051, #00129f) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.btn-gradient-green {
+    background: linear-gradient(45deg, #28a745 0%, #28a745 80%) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.btn-gradient-green:hover {
+    background: linear-gradient(45deg, #28a745 0%, #28a745 80%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    color: white !important;
+}
+
+.btn-gradient-purple {
+    background: linear-gradient(45deg, #7c3aed, #8b5cf6, #a78bfa) !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* Base commune à tous les boutons .btn-gradient-* */
+[class*="btn-gradient-"] {
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+[class*="btn-gradient-"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    color: white !important;
+}
+
+[class*="btn-gradient-"]:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Reflet au survol */
+[class*="btn-gradient-"]::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    transform: rotate(30deg);
+    transition: all 0.5s ease;
+    opacity: 0;
+}
+
+[class*="btn-gradient-"]:hover::after {
+    opacity: 1;
+    transform: rotate(30deg) translate(20%, 20%);
+}
+
+[class*="btn-gradient-"] i {
+    color: white !important;
+    transition: transform 0.3s ease;
+}
+
+[class*="btn-gradient-"]:hover i {
+    transform: scale(1.1);
+}
+
+/* Orange (bouton des notifications de stock) : ombre et reflet propres */
+.btn-gradient-orange {
+    background: linear-gradient(45deg, #f97316, #fb923c, #fdba74) !important;
+    border: none !important;
+    color: white !important;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+}
+
+.btn-gradient-orange:hover {
+    background: linear-gradient(45deg, #ea580c, #f97316, #fb923c) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.35);
+    color: white !important;
+}
+
+.btn-gradient-orange:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(249, 115, 22, 0.25);
+}
+
+.btn-gradient-orange::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    transform: rotate(30deg);
+    transition: all 0.5s ease;
+    opacity: 0;
+    z-index: 1;
+}
+
+.btn-gradient-orange:hover::after {
+    opacity: 1;
+    transform: rotate(30deg) translate(20%, 20%);
+}
+
+.btn-gradient-orange i {
+    color: white !important;
+    transition: transform 0.3s ease;
+}
+
+.btn-gradient-orange:hover i {
+    transform: scale(1.1);
+}
+
+/* Contour : bleu (secondaire) et rouge (danger) */
+.btn-outline-gradient-blue {
+    background-color: transparent !important;
+    border: 2px solid #00129f !important;
+    color: #00129f !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-gradient-blue:hover {
+    background: linear-gradient(45deg, #001051 0%, #00129f 80%) !important;
+    border-color: transparent !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 18, 159, 0.35);
+}
+
+.btn-outline-gradient-blue:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(0, 18, 159, 0.25);
+}
+
+.btn-outline-danger {
+    background-color: transparent !important;
+    border: 2px solid #dc3545 !important;
+    color: #dc3545 !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-danger:hover {
+    background: linear-gradient(45deg, #b02a37 0%, #dc3545 80%) !important;
+    border-color: transparent !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(220, 53, 69, 0.35);
+}
+
+.btn-outline-danger:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(220, 53, 69, 0.25);
+}
+
+/* Détails */
+.btn-primary i,
+.btn-success i {
+    color: white !important;
+}
+
+.btn-outline-secondary:hover i {
+    transform: translateX(-3px);
+    transition: transform 0.3s ease;
+}
+
+
+/* ── 4. Formulaires ───────────────────────────────────────────────────────── */
+
+.required-field::after {
+    content: " *";
+    color: #dc3545;
+}
+
+input:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+.input-group-text {
+    display: flex !important;
+    align-items: center !important;
+    height: 38px !important;
+    padding: 0.375rem 0.75rem !important;
+}
+
+.form-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #001051;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #f0f0f0;
+    position: relative;
+}
+
+.form-section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, #001051, #00129f);
+}
+
+/* Select2 : aligné sur les champs Bootstrap */
+.select2-container {
+    width: 100% !important;
+}
+
+/* Dans un input-group : le champ partage la ligne avec l'icône (une largeur de 100%
+   le ferait passer à la ligne), et se raccorde à elle sans coins arrondis de ce côté */
+.input-group > .select2-container {
+    flex: 1 1 auto !important;
+    width: 1% !important;
+    min-width: 0;
+}
+/* (le <select> d'origine, masqué, reste entre l'icône et le champ Select2) */
+.input-group > .input-group-text ~ .select2-container .select2-selection {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+.select2-selection--single {
+    height: 38px !important;
+    border: 1px solid #dee2e6 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.select2-selection--single .select2-selection__rendered {
+    padding: 0.375rem 0.75rem !important;
+    line-height: 1.5 !important;
+}
+
+.select2-selection--multiple {
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.375rem !important;
+    min-height: 38px !important;
+    padding: 0.375rem 0.75rem !important;
+}
+
+.select2-selection--multiple .select2-selection__choice {
+    background-color: #e7f1ff !important;
+    border: 1px solid #b6d4fe !important;
+    border-radius: 0.25rem !important;
+    color: #0d6efd !important;
+    padding: 0.25rem 0.5rem !important;
+    margin-right: 0.25rem !important;
+    margin-top: 0.25rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+}
+
+.select2-selection--multiple .select2-selection__choice__remove {
+    color: #0d6efd !important;
+    font-weight: bold !important;
+    margin-left: 0.25rem !important;
+    cursor: pointer !important;
+}
+
+.select2-selection--multiple .select2-selection__choice__remove:hover {
+    color: #0a58ca !important;
+}
+
+.select2-selection--multiple .select2-search--inline .select2-search__field {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 1rem !important;
+}
+
+.select2-container--focus .select2-selection {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+.select2-container--open .select2-selection {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.select2-dropdown {
+    border: 1px solid #dee2e6;
+    border-top: none !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.select2-container--open .select2-dropdown {
+    border-color: #86b7fe;
+}
+
+.select2-dropdown .select2-results__options {
+    padding: 0.5rem 0;
+}
+
+.select2-dropdown .select2-search__field {
+    padding: 0.5rem 0.75rem !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.375rem !important;
+    margin: 0.5rem 0.75rem !important;
+    min-height: 38px !important;
+}
+
+.select2-results__option {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.95rem !important;
+}
+
+.select2-results__option--highlighted,
+.select2-results__option[aria-selected="true"] {
+    background-color: #e7f1ff !important;
+    color: #0d6efd !important;
+}
+
+.select2-results__message {
+    color: #6c757d !important;
+    padding: 0.75rem !important;
+}
+
+/* Liste d'autocomplétion des articles : fixe, jamais coupée par un overflow */
+#articleAutocompletePortal {
+    position: fixed;
+    z-index: 999999;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: .5rem;
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+    max-height: 320px;
+    overflow-y: auto;
+    display: none;
+}
+
+#articleAutocompletePortal .list-group-item {
+    padding: .6rem .75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#articleAutocompletePortal .list-group-item:hover {
+    background: #f1f5ff;
+}
+
+/* Zone de dépôt de fichiers */
+.file-upload-card {
+    background: #f8fafc;
+    border-style: dashed !important;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+.file-upload-card:hover {
+    background: #eef4ff;
+    border-color: #00439c;
+}
+
+.file-upload-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-upload-content {
+    pointer-events: none;
+}
+
+
+/* ── 5. Tableaux ──────────────────────────────────────────────────────────── */
+
+.table td {
+    vertical-align: middle;
+}
+
+.clickable-row {
+    cursor: pointer;
+}
+
+.clickable-row:hover td {
+    background: rgba(0, 0, 0, .03);
+}
+
+/* Entête en dégradé bleu : class="dt-head-gradient" sur le <table> */
+table.dt-head-gradient thead tr {
+    background: linear-gradient(90deg, #001051, #00129f) !important;
+}
+
+table.dt-head-gradient thead th {
+    background: transparent !important;
+    color: #fff !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    border-color: rgba(255, 255, 255, .15) !important;
+}
+
+table.dt-head-gradient thead th a {
+    color: #fff !important;
+    text-decoration: none !important;
+}
+
+/* DataTables (listes des devises, UDM, lignes budgétaires…) */
+table.dataTable,
+table.dataTable th,
+table.dataTable td,
+.dataTables_wrapper,
+.dataTables_info,
+.dataTables_paginate,
+.dataTables_filter,
+.dataTables_length,
+.dataTables_processing {
+    font-family: 'Figtree', 'Segoe UI', sans-serif !important;
+}
+
+table.dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+table.dataTable th,
+table.dataTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+table.dataTable thead {
+    background: linear-gradient(90deg, #001051, #00129f) !important;
+    color: white !important;
+}
+
+table.dataTable thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+table.dataTable tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+table.dataTable tbody tr:hover {
+    background-color: #e9ecef;
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    padding: 10px 0;
+}
+
+.dataTables_wrapper .dataTables_info {
+    padding-top: 10px !important;
+}
+
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 0.9rem;
+}
+
+.dataTables_length select {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #212529;
+    height: 32px;
+    width: 120px;
+}
+
+/* Pagination DataTables : liens compacts, page active en vert */
+.dataTables_paginate {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-top: 0.8rem;
+}
+
+.dataTables_paginate .pagination {
+    display: flex;
+    gap: 0;
+    margin: 0;
+}
+
+.dataTables_paginate .page-item .page-link {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    color: #001051;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.dataTables_paginate .page-item:hover,
+.dataTables_paginate .page-item:focus,
+.dataTables_paginate .page-item:active,
+.dataTables_paginate .page-item .page-link:hover,
+.dataTables_paginate .page-item .page-link:focus,
+.dataTables_paginate .page-item .page-link:active {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.dataTables_paginate .page-item .page-link:hover {
+    color: #0d6efd;
+}
+
+.dataTables_paginate .page-item.active .page-link {
+    color: #00AD00;
+    font-weight: 600;
+    pointer-events: none;
+    background: none;
+}
+
+.dataTables_paginate .page-item.disabled .page-link {
+    color: #adb5bd;
+    pointer-events: none;
+    cursor: default;
+    background: none !important;
+    border: none !important;
+}
+
+
+/* ── 6. Badges de statut et suivi de validation ───────────────────────────── */
+
+/* Pastille de statut ; la couleur vient de EtapeWorkflow (badge-grey, badge-blue…) */
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .35rem .65rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: .78rem;
+    letter-spacing: .2px;
+    border: 1px solid rgba(0, 0, 0, .08);
+    white-space: nowrap;
+}
+
+.badge-status i {
+    font-size: .9em;
+    opacity: .9;
+}
+
+.badge-grey { background: #E6E6E6; color: #333; border-color: rgba(0, 0, 0, .15); }            /* créée */
+.badge-blue { background: #e6ebf5; color: #000A31; border-color: rgba(0, 10, 49, .2); }          /* en validation */
+.badge-light-blue { background: #667097; color: #fff; border-color: rgba(102, 112, 151, .4); }  /* validation N4 */
+.badge-green { background: #9ECD95; color: #004500; border-color: rgba(0, 69, 0, .3); }         /* validée */
+.badge-red { background: #F39999; color: #5A0000; border-color: rgba(90, 0, 0, .3); }           /* refusée */
+.badge-orange { background: #fff4e6; color: #b45309; border-color: rgba(180, 83, 9, .25); }     /* décision CODEP */
+
+.badge-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.badge-teal {
+    background-color: #d2f4ea;
+    color: #0d6e4f;
+    border: 1px solid #20c997;
+}
+
+/* Étapes de validation d'une demande */
+.approval-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 0, 0, .08);
+    border-radius: 14px;
+    background: #fafafa;
+}
+
+.approval-stepper .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 90px;
+    opacity: .75;
+}
+
+.approval-stepper .dot {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #cbd5e1;
+    background: #fff;
+    font-weight: 700;
+}
+
+.approval-stepper .label {
+    margin-top: 6px;
+    font-size: .85rem;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.approval-stepper .line {
+    flex: 1;
+    height: 3px;
+    background: #e2e8f0;
+    border-radius: 999px;
+}
+
+.approval-stepper .step.is-done,
+.approval-stepper .step.is-current {
+    opacity: 1;
+}
+
+.approval-stepper .step.is-done .dot {
+    border-color: #00AD00;
+    background: #00AD00;
+    color: #fff;
+}
+
+.approval-stepper .line.is-done {
+    background: #00AD00;
+}
+
+.approval-stepper .step.is-current .dot {
+    border-color: #001051;
+    background: #001051;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .15);
+}
+
+.approval-stepper .step.is-disabled {
+    opacity: .4;
+}
+
+
+/* ── 7. Tableau de bord ───────────────────────────────────────────────────── */
+
+.stat-card {
+    background: #fff;
+    border-radius: 12px;
+    border: none;
+    position: relative;
+    margin-bottom: 24px;
+    box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1),
+    0 0.9375rem 1.40625rem rgba(90, 97, 105, 0.1),
+    0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12),
+    0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 1rem 3rem rgba(90, 97, 105, 0.18),
+    0 0.5rem 1rem rgba(90, 97, 105, 0.15);
+}
+
+.stat-card .card-body {
+    padding: 20px 22px;
+    position: relative;
+    z-index: 1;
+}
+
+.stat-card .card-icon {
+    position: absolute;
+    right: -10px;
+    top: 12px;
+    font-size: 90px;
+    opacity: 0.15;
+    z-index: 0;
+    color: #fff;
+}
+
+.stat-card .stat-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+    opacity: 0.88;
+    color: #fff;
+}
+
+.stat-card .stat-value {
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+    color: #fff;
+}
+
+.stat-card .stat-sub {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.80);
+}
+
+.grad-blue { background: linear-gradient(45deg, #001051, #001173) !important; }
+.grad-red { background: linear-gradient(45deg, #E20000, #E20000 80%, #df3333) !important; }
+.grad-green { background: linear-gradient(45deg, #00AD00, #00AD00 80%, #4fd84f) !important; }
+
+.chart-card {
+    background: #fff;
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1),
+    0 0.9375rem 1.40625rem rgba(90, 97, 105, 0.1),
+    0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12);
+    margin-bottom: 24px;
+}
+
+.chart-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 14px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #001051;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-card .card-header i {
+    background: linear-gradient(45deg, #001051, #001173);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.chart-card .card-body {
+    padding: 16px 20px;
+}
+
+
+/* ── 8. État de stock ─────────────────────────────────────────────────────── */
+
+/* Colonnes entrée / sortie / stock disponible */
+#etatStockTable tbody td.text-entree { color: #16a34a !important; }
+#etatStockTable tbody td.text-sortie { color: #dc2626 !important; }
+#etatStockTable tbody td.text-stock { color: #1d4ed8 !important; }
+
+/* Pastilles d'état dans le tableau (rupture, seuil, normal) */
+#etatStockTable .badge {
+    position: static !important;
+    min-width: auto !important;
+    height: auto !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+#etatStockTable .badge.bg-danger:not(.notification-badge),
+#etatStockTable .badge.bg-warning:not(.notification-badge),
+#etatStockTable .badge.bg-success:not(.notification-badge) {
+    padding: 0.5rem 1rem !important;
+    border-radius: 50rem !important;
+}
+
+#etatStockTable .badge.bg-danger:not(.notification-badge) {
+    animation: pulse 2s infinite;
+}
+
+.notification-badge {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.notification-badge:hover {
+    transform: scale(1.1);
+}
+
+.notification-pulse {
+    animation: pulse 2s infinite !important;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    #etatStockTable .badge {
+        padding: 0.35rem 0.75rem !important;
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Fenêtre des notifications */
+.notification-item {
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification-item:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+    transform: translateX(5px);
+}
+
+.notification-item.alert-rupture {
+    border-left: 4px solid #dc3545;
+}
+
+.notification-item.alert-seuil {
+    border-left: 4px solid #ffc107;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.notifications-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notifications-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.notifications-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.notifications-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Historique des mouvements d'un article */
+.historique-btn {
+    border: 1px solid rgba(0, 0, 0, .08);
+    background: #fff;
+}
+
+.historique-btn:hover {
+    background: rgba(13, 110, 253, .08);
+}
+
+.mv-row {
+    transition: background .15s ease;
+    border-left: 4px solid transparent;
+}
+
+.mv-row:hover {
+    filter: brightness(0.98);
+}
+
+.mv-entree {
+    background: rgba(25, 135, 84, .06);
+    border-left-color: #198754;
+}
+
+.mv-sortie {
+    background: rgba(220, 53, 69, .06);
+    border-left-color: #dc3545;
+}
+
+.mv-pill {
+    font-weight: 700;
+    letter-spacing: .3px;
+    padding: .35rem .6rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .82rem;
+    white-space: nowrap;
+}
+
+.mv-pill-entree {
+    background: rgba(25, 135, 84, .12);
+    color: #198754;
+    border: 1px solid rgba(25, 135, 84, .25);
+}
+
+.mv-pill-sortie {
+    background: rgba(220, 53, 69, .12);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, .25);
+}
+
+.mv-pill-unk {
+    background: rgba(108, 117, 125, .12);
+    color: #6c757d;
+    border: 1px solid rgba(108, 117, 125, .25);
+}
+
+.mv-qty {
+    font-weight: 800;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.mv-qty-entree { color: #198754; }
+.mv-qty-sortie { color: #dc3545; }
+
+.mv-muted {
+    font-size: .82rem;
+    color: #6c757d;
+}
+
+
+/* ── 9. Documents : bon de livraison, bon de sortie, demande ──────────────── */
+
+.bl-document {
+    font-family: 'Figtree', 'Segoe UI', sans-serif;
+    background: #fff;
+    padding: 30px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.bl-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.bl-title h3 {
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.bl-infos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.bl-infos div {
+    font-size: 0.9rem;
+}
+
+.bl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.bl-table th,
+.bl-table td {
+    border: 1px solid #000;
+    padding: 8px;
+}
+
+.bl-table thead {
+    background: #f1f1f1;
+    font-weight: 700;
+}
+
+/* Pied de page des documents (fragment/footer-doc) */
+.bl-footer {
+    border-top: 1px solid #ddd;
+    margin-top: 20px;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 11px;
+    color: #6b7280;
+    letter-spacing: .2px;
+    line-height: 1.35;
+    text-transform: uppercase;
+}
+
+
+/* ── 10. Impression ───────────────────────────────────────────────────────────
+   La largeur d'une page A4 passe sous 768px : la règle « mobile » remet la sidebar
+   dans le flux. visibility:hidden la cacherait sans libérer sa place et repousserait
+   le document en page 2 : sidebar et barres d'actions sont retirées du flux. */
+@media print {
+    #sidebar,
+    .sidebar-burger,
+    .sidebar-voile,
+    .no-print,
+    .page-actions {
+        display: none !important;
+    }
+
+    .modal-footer {
+        display: none;
+    }
+
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+        background: #fff !important;
+    }
+
+    /* Seuls les documents s'impriment : BL, BS, demande (.bl-document), bon de commande (.bc-document) */
+    body * {
+        visibility: hidden;
+    }
+
+    .bl-document, .bl-document *,
+    .bc-document, .bc-document * {
+        visibility: visible;
+    }
+
+    /* Le document occupe toute la page, sans cadre de carte */
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .bl-document {
+        padding: 0 !important;
+    }
+
+    .modal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: auto;
+    }
+}

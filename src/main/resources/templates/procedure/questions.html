@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Questions</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section>
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="d-flex justify-content-between align-items-start mb-4 page-actions gap-2">
+            <div>
+                <div class="pr-ref">
+                    <span th:text="${procedure.reference}"></span> · <span th:text="${procedure.direction.code}"></span>
+                </div>
+                <h1 class="mb-0"><i class="fas fa-question-circle"></i> Questions du quiz</h1>
+                <div class="text-muted" th:text="${procedure.titre}"></div>
+            </div>
+            <a th:href="@{/procedure/{id}(id=${procedure.id})}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Procédure
+            </a>
+        </div>
+
+        <div class="alert" th:classappend="${nbActives >= nbQuestionsQuiz} ? 'alert-success' : 'alert-warning'">
+            <i class="fas" th:classappend="${nbActives >= nbQuestionsQuiz} ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
+            <b th:text="${nbActives}"></b> question(s) active(s).
+            Chaque quiz en tire <b th:text="${nbQuestionsQuiz}"></b> au hasard :
+            <span th:if="${nbActives >= nbQuestionsQuiz}">le quiz est disponible pour les collaborateurs.</span>
+            <span th:unless="${nbActives >= nbQuestionsQuiz}">
+                ajoutez-en encore <b th:text="${nbQuestionsQuiz - nbActives}"></b> pour ouvrir le quiz.
+            </span>
+            Prévoir plus de questions que nécessaire rend chaque quiz différent.
+        </div>
+
+        <div class="row g-3">
+            <!-- Formulaire -->
+            <div class="col-xl-5">
+                <form th:action="@{/procedure/{id}/questions/save(id=${procedure.id})}" th:object="${form}" method="post"
+                      data-chargement="Enregistrement…">
+                    <input type="hidden" th:field="*{id}"/>
+                    <div class="card" style="position: sticky; top: 1rem">
+                        <div class="card-header">
+                            <h6 class="mb-0" th:text="${form.id == null} ? 'Nouvelle question' : 'Modifier la question'"></h6>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label" for="enonce">Énoncé *</label>
+                            <textarea class="form-control mb-3" th:field="*{enonce}" rows="3" maxlength="1000" required></textarea>
+
+                            <label class="form-label">Propositions — cochez la bonne réponse *</label>
+                            <div class="input-group mb-2" th:each="c, it : *{choix}">
+                                <span class="input-group-text">
+                                    <input class="form-check-input mt-0" type="radio" name="indexCorrect"
+                                           th:value="${it.index}" th:checked="${form.indexCorrect == it.index}"
+                                           th:title="'Bonne réponse'" required>
+                                </span>
+                                <input type="text" class="form-control" th:name="|choix[${it.index}]|" th:value="${c}"
+                                       maxlength="500" th:placeholder="|Proposition ${it.count}| + (${it.index < 2} ? '' : ' (facultative)')"
+                                       th:required="${it.index < 2}">
+                            </div>
+                            <div class="form-text mb-3">De 2 à 6 propositions ; les lignes vides sont ignorées.
+                                L'ordre est mélangé à chaque quiz.</div>
+
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" th:field="*{actif}">
+                                <label class="form-check-label" for="actif1">Active (peut être tirée dans les quiz)</label>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between">
+                            <a th:if="${form.id != null}" th:href="@{/procedure/{id}/questions(id=${procedure.id})}"
+                               class="btn btn-outline-secondary">Annuler</a>
+                            <span th:unless="${form.id != null}"></span>
+                            <button type="submit" class="btn btn-gradient-green px-4">
+                                <i class="fas fa-save me-1"></i> Enregistrer
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Liste -->
+            <div class="col-xl-7">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Banque de questions (<span th:text="${#lists.size(questions)}"></span>)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(questions)}" class="text-muted text-center py-4">
+                            Aucune question pour le moment.
+                        </div>
+                        <div th:each="q, it : ${questions}" class="rep-ligne" th:classappend="${q.actif} ? '' : 'q-inactive'">
+                            <div class="fw-bold text-muted" style="min-width: 28px" th:text="${it.count} + '.'"></div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold" style="white-space: pre-line" th:text="${q.enonce}"></div>
+                                <span th:unless="${q.actif}" class="st-badge st-neutre">Désactivée</span>
+                                <ul class="q-choix">
+                                    <li th:each="c : ${q.choix}" th:classappend="${c.correct} ? 'correct'">
+                                        <i class="fas me-1" th:classappend="${c.correct} ? 'fa-check' : 'fa-circle'"
+                                           th:style="${c.correct} ? '' : 'font-size:.4rem; vertical-align: middle'"></i>
+                                        <span th:text="${c.libelle}"></span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="text-nowrap">
+                                <a th:href="@{/procedure/{id}/questions(id=${procedure.id},question=${q.id})}"
+                                   class="btn btn-sm btn-outline-secondary" title="Modifier"><i class="fas fa-pen"></i></a>
+                                <form th:action="@{/question/{id}/basculer(id=${q.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                            th:title="${q.actif} ? 'Désactiver' : 'Activer'">
+                                        <i class="fas" th:classappend="${q.actif} ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/question/{id}/supprimer(id=${q.id})}" method="post" class="d-inline"
+                                      data-confirmer="Supprimer cette question ?"
+                                      data-confirmer-texte="Si elle a déjà été posée dans un quiz, elle sera seulement désactivée."
+                                      data-confirmer-type="danger" data-confirmer-bouton="Supprimer">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

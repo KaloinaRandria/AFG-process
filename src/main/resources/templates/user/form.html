@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${utilisateur.id == 0} ? 'Insérer un utilisateur' : 'Modifier un utilisateur'">Utilisateur</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section th:with="u=${utilisateur}, nouveau=${utilisateur.id == 0}">
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 page-actions gap-2">
+            <h1><i class="fas fa-user"></i> <span th:text="${nouveau} ? 'Insérer un utilisateur' : 'Modifier un utilisateur'"></span></h1>
+            <a th:href="@{/user/list}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Liste</a>
+        </div>
+
+        <form th:action="@{/user/save}" method="post" data-chargement="Enregistrement…">
+            <input type="hidden" name="id" th:if="${!nouveau}" th:value="${u.id}">
+            <div class="card" style="max-width: 760px">
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Le mot de passe est celui de l'Active Directory : seul le mail doit correspondre
+                        au compte AD du collaborateur.
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="mail">Mail *</label>
+                            <input type="email" class="form-control" id="mail" name="mail" th:value="${u.mail}" required
+                                   placeholder="prenom.nom@afgbank.mg">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="prenom">Prénom</label>
+                            <input type="text" class="form-control" id="prenom" name="prenom" th:value="${u.prenom}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="nom">Nom</label>
+                            <input type="text" class="form-control" id="nom" name="nom" th:value="${u.nom}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="idDirection">Direction</label>
+                            <select class="form-select" id="idDirection" name="idDirection">
+                                <option value="">—</option>
+                                <option th:each="d : ${directions}" th:value="${d.id}" th:text="${d.nomAffiche}"
+                                        th:selected="${u.direction != null and u.direction.id == d.id}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex flex-column justify-content-end gap-1">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="admin" name="admin" value="true"
+                                       th:checked="${u.admin}">
+                                <label class="form-check-label" for="admin">Administrateur (gère procédures, questions, suivi)</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="actif" name="actif" value="true"
+                                       th:checked="${u.actif}">
+                                <label class="form-check-label" for="actif">Compte actif</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="submit" class="btn btn-gradient-green px-4"><i class="fas fa-save me-1"></i> Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </section>
+</div>
+</body>
+</html>

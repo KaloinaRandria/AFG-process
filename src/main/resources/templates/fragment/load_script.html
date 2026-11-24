@@ -1,0 +1,256 @@
+<div th:fragment="load_script">
+    <!-- Jeton CSRF : ajouté automatiquement aux appels AJAX et aux formulaires POST -->
+    <script th:inline="javascript">
+        (function () {
+            const token  = /*[[${_csrf != null ? _csrf.token : ''}]]*/ '';
+            const header = /*[[${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}]]*/ 'X-CSRF-TOKEN';
+            const param  = /*[[${_csrf != null ? _csrf.parameterName : '_csrf'}]]*/ '_csrf';
+            if (!token) return;
+            window.CSRF = {token: token, header: header, param: param};
+
+            const estLecture = m => /^(GET|HEAD|OPTIONS|TRACE)$/i.test(m || 'GET');
+            const memeOrigine = url => {
+                try { return new URL(url, window.location.href).origin === window.location.origin; }
+                catch (e) { return false; }
+            };
+
+            // fetch()
+            const fetchOrigine = window.fetch;
+            window.fetch = function (input, init) {
+                const url     = (typeof input === 'string' || input instanceof URL) ? String(input) : input.url;
+                const methode = (init && init.method) || (typeof input === 'object' && input.method) || 'GET';
+                if (!estLecture(methode) && memeOrigine(url)) {
+                    init = init || {};
+                    const headers = new Headers(init.headers
+                        || (typeof input === 'object' && !(input instanceof URL) ? input.headers : undefined));
+                    headers.set(header, token);
+                    init.headers = headers;
+                }
+                return fetchOrigine.call(this, input, init);
+            };
+
+            // XMLHttpRequest (jQuery $.ajax…)
+            const openOrigine = XMLHttpRequest.prototype.open;
+            const sendOrigine = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function (methode, url) {
+                this.__csrf = !estLecture(methode) && memeOrigine(url);
+                return openOrigine.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function () {
+                if (this.__csrf) {
+                    try { this.setRequestHeader(header, token); } catch (e) { /* requête déjà envoyée */ }
+                }
+                return sendOrigine.apply(this, arguments);
+            };
+
+            // Formulaires POST sans champ de jeton (action posée en JavaScript, etc.)
+            const completer = form => {
+                if ((form.getAttribute('method') || '').toLowerCase() !== 'post') return;
+                if (form.querySelector('input[name="' + param + '"]')) return;
+                const champ = document.createElement('input');
+                champ.type = 'hidden';
+                champ.name = param;
+                champ.value = token;
+                form.appendChild(champ);
+            };
+            const completerTous = () => document.querySelectorAll('form').forEach(completer);
+            document.addEventListener('DOMContentLoaded', completerTous);
+            document.addEventListener('submit', e => completer(e.target), true);
+            // form.submit() ne déclenche pas l'événement "submit"
+            const submitOrigine = HTMLFormElement.prototype.submit;
+            HTMLFormElement.prototype.submit = function () {
+                completer(this);
+                return submitOrigine.call(this);
+            };
+        })();
+    </script>
+    <!--
+        Chargement des boutons : un formulaire marqué data-chargement="Texte…" affiche une
+        roue sur le bouton cliqué et bloque ses boutons pendant l'envoi (évite le double clic).
+        Les boutons extérieurs au formulaire (attribut form="id") sont aussi bloqués.
+    -->
+    <!--
+        Boîtes de dialogue SweetAlert2 à la place des alert() / confirm() du navigateur.
+
+        Formulaire  : data-confirmer="Titre" (+ data-confirmer-texte, -bouton, -type) → confirmation avant envoi.
+        Bouton      : data-confirm="Titre" (+ data-confirm-texte, -bouton, -type) → confirmation avant le clic.
+                      type : question (défaut pour un formulaire) | warning | danger (défaut pour un bouton).
+                      Le texte accepte du HTML : contenu de confiance uniquement.
+        Script      : confirmerAction({titre, texte, bouton, type}) → Promise<boolean>
+                      confirmerEnvoi(event, {…}) dans un écouteur submit (message calculé)
+                      afficherAlerte(message, type = 'error', titre) à la place de alert()
+        Écouteurs en phase de capture : ils passent avant le chargement des boutons (data-chargement).
+    -->
+    <script>
+        (function () {
+            const STYLES = {
+                question: {icon: 'question', bouton: 'btn btn-gradient-green px-4'},
+                warning:  {icon: 'warning',  bouton: 'btn btn-warning px-4'},
+                danger:   {icon: 'warning',  bouton: 'btn btn-danger px-4'},
+                info:     {icon: 'info',     bouton: 'btn btn-gradient-blue px-4'}
+            };
+
+            window.confirmerAction = function (opts) {
+                opts = opts || {};
+                if (typeof Swal === 'undefined') {      // SweetAlert non chargé : rien n'est envoyé sans confirmation
+                    console.error('SweetAlert2 indisponible : confirmation impossible.');
+                    return Promise.resolve(false);
+                }
+                const style = STYLES[opts.type] || STYLES.question;
+                return Swal.fire({
+                    icon: style.icon,
+                    title: opts.titre || 'Confirmer ?',
+                    html: opts.texte || '',
+                    showCancelButton: true,
+                    confirmButtonText: opts.bouton || 'Confirmer',
+                    cancelButtonText: 'Annuler',
+                    reverseButtons: true,
+                    focusCancel: opts.type === 'danger',
+                    buttonsStyling: false,
+                    customClass: {
+                        confirmButton: style.bouton,
+                        cancelButton: 'btn btn-outline-secondary px-4 me-2'
+                    }
+                }).then(function (r) { return r.isConfirmed; });
+            };
+
+            /** opts.html : message en HTML (contenu de confiance) ; opts.bloquante : fermeture par le bouton seulement. */
+            window.afficherAlerte = function (message, type, titre, opts) {
+                opts = opts || {};
+                if (typeof Swal === 'undefined') { console.error(message); return Promise.resolve(); }
+                const icone = type || 'error';
+                return Swal.fire({
+                    icon: icone,
+                    title: titre || ({error: 'Erreur', warning: 'Attention', success: 'Succès', info: 'Information'}[icone] || ''),
+                    text: opts.html ? undefined : message,
+                    html: opts.html ? message : undefined,
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: !opts.bloquante,
+                    allowEscapeKey: !opts.bloquante,
+                    buttonsStyling: false,
+                    customClass: {confirmButton: icone === 'error' ? 'btn btn-danger px-4' : 'btn btn-gradient-blue px-4'}
+                });
+            };
+
+            /** Dans un écouteur submit : bloque l'envoi, demande confirmation, puis renvoie le formulaire. */
+            window.confirmerEnvoi = function (e, opts) {
+                const form = e.target;
+                if (form.dataset.confirme === '1') {   // déjà confirmé : l'envoi suit son cours
+                    delete form.dataset.confirme;
+                    return;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const submitter = e.submitter;
+                window.confirmerAction(opts).then(function (ok) {
+                    if (!ok) return;
+                    form.dataset.confirme = '1';
+                    // requestSubmit relance l'événement submit : la roue de chargement s'affiche
+                    if (form.requestSubmit) form.requestSubmit(submitter || undefined);
+                    else form.submit();
+                });
+            };
+
+            // Formulaires data-confirmer
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                if (!form.hasAttribute || !form.hasAttribute('data-confirmer')) return;
+                window.confirmerEnvoi(e, {
+                    titre: form.getAttribute('data-confirmer'),
+                    texte: form.dataset.confirmerTexte,
+                    bouton: form.dataset.confirmerBouton,
+                    type: form.dataset.confirmerType || 'question'
+                });
+            }, true);
+
+            // Boutons data-confirm
+            document.addEventListener('click', function (e) {
+                const b = e.target.closest && e.target.closest('[data-confirm]');
+                if (!b || !b.getAttribute('data-confirm')) return;
+                if (b.dataset.confirme === '1') {
+                    delete b.dataset.confirme;
+                    return;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                window.confirmerAction({
+                    titre: b.getAttribute('data-confirm'),
+                    texte: b.dataset.confirmTexte,
+                    bouton: b.dataset.confirmBouton,
+                    type: b.dataset.confirmType || 'danger'
+                }).then(function (ok) {
+                    if (!ok) return;
+                    b.dataset.confirme = '1';
+                    b.click();
+                });
+            }, true);
+        })();
+    </script>
+    <script>
+        (function () {
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                // Formulaire non concerné, ou envoi annulé (confirm() refusé, contrôle échoué)
+                if (!form.hasAttribute || !form.hasAttribute('data-chargement') || e.defaultPrevented) return;
+
+                const boutons = Array.from(form.querySelectorAll('button[type="submit"], button:not([type])'));
+                if (form.id) {
+                    boutons.push(...document.querySelectorAll('button[form="' + form.id + '"]'));
+                }
+                const cible = e.submitter || boutons[0];
+
+                // Un bouton désactivé n'est plus envoyé : on recopie son nom et sa valeur (ex. action=soumettre)
+                if (cible && cible.name) {
+                    const champ = document.createElement('input');
+                    champ.type = 'hidden';
+                    champ.name = cible.name;
+                    champ.value = cible.value;
+                    form.appendChild(champ);
+                }
+
+                boutons.forEach(function (b) {
+                    if (b.dataset.htmlOrigine === undefined) b.dataset.htmlOrigine = b.innerHTML;
+                    b.disabled = true;
+                });
+                if (cible) {
+                    cible.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>'
+                        + (form.getAttribute('data-chargement') || 'Traitement en cours…');
+                }
+            });
+
+            // Retour arrière du navigateur (page restaurée depuis le cache) : boutons réactivés
+            window.addEventListener('pageshow', function (e) {
+                if (!e.persisted) return;
+                document.querySelectorAll('button[data-html-origine]').forEach(function (b) {
+                    b.innerHTML = b.dataset.htmlOrigine;
+                    b.disabled = false;
+                });
+            });
+        })();
+    </script>
+    <!-- UN SEUL jQuery au début -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- DataTables et ses dépendances -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- DataTables Buttons -->
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+    <!-- SweetAlert2 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Optionnel : thème Bootstrap pour intégration harmonieuse -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+</div>

@@ -1,0 +1,15 @@
+<!-- Messages de retour (flash « ok » / « ko ») : même modèle que toutes les alertes (afficherAlerte, load_script) -->
+<div th:fragment="pop_up">
+    <div th:if="${ok}">
+        <script th:inline="javascript">
+            afficherAlerte(/*[[${ok}]]*/ "", "success", null, {html: true, bloquante: true});
+        </script>
+    </div>
+
+    <!-- Erreur -->
+    <div th:if="${ko}">
+        <script th:inline="javascript">
+            afficherAlerte(/*[[${ko}]]*/ "", "error", null, {html: true, bloquante: true});
+        </script>
+    </div>
+</div>

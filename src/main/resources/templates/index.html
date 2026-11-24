@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Accueil</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+    <style>
+        .db-eyebrow { font-size: .78rem; font-weight: 600; color: var(--ui-muted); text-transform: uppercase; letter-spacing: .08em; }
+        .db-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; color: var(--ui-brand); margin: .1rem 0 .15rem; }
+        .db-subtitle { color: var(--ui-ink-2); font-size: .92rem; }
+        .db-tile {
+            display: flex; align-items: center; gap: 1rem; height: 100%;
+            background: var(--ui-surface); border: 1px solid var(--ui-line); border-radius: var(--ui-radius);
+            padding: 1.1rem 1.25rem; box-shadow: var(--ui-shadow); color: var(--ui-ink); text-decoration: none;
+            transition: box-shadow .15s, transform .15s;
+        }
+        .db-tile:hover { box-shadow: var(--ui-shadow-h); transform: translateY(-1px); color: var(--ui-ink); }
+        .db-tile-icon {
+            flex: 0 0 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;
+            background: #eaf0fd; color: #2a5bd7; font-size: 1.15rem;
+        }
+        .db-tile-title { font-weight: 700; }
+        .db-tile-detail { font-size: .85rem; color: var(--ui-ink-2); }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section>
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <header class="mb-4">
+            <div class="db-eyebrow">Formations &amp; procédures</div>
+            <div class="db-title">Bonjour, <span sec:authentication="principal.prenom"></span></div>
+            <div class="db-subtitle">Retrouvez les procédures de la banque et suivez les formations.</div>
+        </header>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="kpi">
+                    <div class="kpi-label">Procédures acquises</div>
+                    <div class="kpi-valeur text-success">
+                        <span th:text="${nbAcquises}">0</span><span class="fs-6 text-muted"> / <span th:text="${nbProcedures}"></span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="kpi">
+                    <div class="kpi-label">Formations requises</div>
+                    <div class="kpi-valeur text-danger" th:text="${#lists.size(aRevoir)}">0</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="kpi">
+                    <div class="kpi-label">Procédures non évaluées</div>
+                    <div class="kpi-valeur" th:text="${nbNonEvaluees}">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4" th:unless="${#lists.isEmpty(aRevoir)}">
+            <div class="card-header">
+                <h6 class="mb-0 text-danger"><i class="fas fa-chalkboard-teacher me-2"></i>Formations à suivre</h6>
+            </div>
+            <div class="card-body py-1">
+                <div class="rep-ligne align-items-center" th:each="e : ${aRevoir}">
+                    <div class="flex-grow-1">
+                        <div class="pr-ref" th:text="|${e.procedure.reference} · ${e.procedure.direction.code}|"></div>
+                        <div class="pr-titre" th:text="${e.procedure.titre}"></div>
+                        <div class="small text-muted">
+                            Dernière note : <b th:text="|${e.note}/${e.nbQuestions}|"></b>
+                            (minimum <span th:text="${e.seuil}"></span>)
+                        </div>
+                    </div>
+                    <a th:href="@{/procedure/{id}(id=${e.procedure.id})}" class="btn btn-sm btn-gradient-blue text-nowrap">
+                        <i class="fas fa-book-open me-1"></i> Suivre la formation
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui-section-title"><span>Accès rapide</span></div>
+        <div class="row g-3">
+            <div class="col-xl-4 col-md-6">
+                <a th:href="@{/procedure/list}" class="db-tile">
+                    <span class="db-tile-icon"><i class="fas fa-book"></i></span>
+                    <span>
+                        <span class="db-tile-title d-block">Procédures</span>
+                        <span class="db-tile-detail">Lire une procédure et passer son quiz</span>
+                    </span>
+                </a>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <a th:href="@{/evaluation/mes-evaluations}" class="db-tile">
+                    <span class="db-tile-icon"><i class="fas fa-history"></i></span>
+                    <span>
+                        <span class="db-tile-title d-block">Mes évaluations</span>
+                        <span class="db-tile-detail">Historique de mes notes et résultats</span>
+                    </span>
+                </a>
+            </div>
+            <div class="col-xl-4 col-md-6" sec:authorize="hasRole('ADMIN')">
+                <a th:href="@{/evaluation/suivi}" class="db-tile">
+                    <span class="db-tile-icon"><i class="fas fa-user-graduate"></i></span>
+                    <span>
+                        <span class="db-tile-title d-block">Suivi des collaborateurs</span>
+                        <span class="db-tile-detail">Notes et formations requises par procédure</span>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

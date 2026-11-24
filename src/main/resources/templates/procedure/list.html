@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Procédures</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section>
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 page-actions gap-2">
+            <h1><i class="fas fa-book"></i> Procédures</h1>
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/procedure/add}" class="btn btn-gradient-blue">
+                <i class="fas fa-plus me-1"></i> Nouvelle procédure
+            </a>
+        </div>
+
+        <p class="text-muted mb-3">
+            Choisissez une procédure : lisez le document puis passez le quiz de
+            <b th:text="${nbQuestionsQuiz}">10</b> questions. Selon votre note, la procédure est
+            <span class="st-badge st-acquis">Acquise</span> ou une
+            <span class="st-badge st-formation">Formation requise</span> vous est indiquée.
+        </p>
+
+        <div class="card">
+            <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+                <label for="filtreDirection" class="form-label mb-0 me-1">Direction</label>
+                <select id="filtreDirection" class="form-select form-select-sm" style="max-width: 320px">
+                    <option value="">Toutes les directions</option>
+                    <option th:each="d : ${directions}" th:value="${d.code}" th:text="${d.nomAffiche}"></option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(procedures)}" class="ui-empty text-center text-muted py-4">
+                    Aucune procédure disponible pour le moment.
+                </div>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(procedures)}">
+                    <table id="tableProcedures" class="table table-hover align-middle w-100">
+                        <thead>
+                        <tr>
+                            <th>Procédure</th>
+                            <th>Direction</th>
+                            <th sec:authorize="hasRole('ADMIN')">Questions</th>
+                            <th>Mon résultat</th>
+                            <th class="text-end no-sort">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${procedures}" th:with="e=${derniers[p.id]}, nbq=${nbQuestions[p.id] ?: 0}"
+                            th:classappend="${p.actif and p.direction.actif} ? '' : 'q-inactive'">
+                            <td>
+                                <div class="pr-ref" th:text="${p.reference}"></div>
+                                <a class="pr-titre" th:href="@{/procedure/{id}(id=${p.id})}" th:text="${p.titre}"></a>
+                                <span th:unless="${p.actif}" class="st-badge st-neutre ms-1">Inactive</span>
+                                <div class="pr-desc" th:if="${p.description}"
+                                     th:text="${#strings.abbreviate(p.description, 140)}"></div>
+                            </td>
+                            <td th:text="${p.direction.code}"></td>
+                            <td sec:authorize="hasRole('ADMIN')" th:attr="data-order=${nbq}">
+                                <a th:href="@{/procedure/{id}/questions(id=${p.id})}"
+                                   th:class="${nbq >= nbQuestionsQuiz} ? 'text-success' : 'text-danger'"
+                                   th:title="${nbq >= nbQuestionsQuiz} ? 'Quiz disponible' : 'Pas assez de questions : quiz indisponible'">
+                                    <span th:text="${nbq}"></span> / <span th:text="${nbQuestionsQuiz}"></span>
+                                </a>
+                            </td>
+                            <td>
+                                <th:block th:if="${e != null}">
+                                    <span class="st-badge" th:classappend="${e.formationRequise} ? 'st-formation' : 'st-acquis'">
+                                        <i class="fas" th:classappend="${e.formationRequise} ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>
+                                        <span th:text="${e.resultat.libelle}"></span>
+                                    </span>
+                                    <div class="small text-muted mt-1">
+                                        <span th:text="|${e.note}/${e.nbQuestions}|"></span> ·
+                                        <span th:text="${#temporals.format(e.dateFin, 'dd/MM/yyyy')}"></span>
+                                    </div>
+                                </th:block>
+                                <span th:if="${e == null and enCours.contains(p.id)}" class="st-badge st-encours">
+                                    <i class="fas fa-hourglass-half"></i> Quiz en cours
+                                </span>
+                                <span th:if="${e == null and !enCours.contains(p.id)}" class="st-badge st-neutre">Non évaluée</span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a th:href="@{/procedure/{id}(id=${p.id})}" class="btn btn-sm btn-gradient-blue">
+                                    <i class="fas fa-play me-1"></i> Ouvrir
+                                </a>
+                                <th:block sec:authorize="hasRole('ADMIN')">
+                                    <a th:href="@{/procedure/{id}/edit(id=${p.id})}" class="btn btn-sm btn-outline-secondary"
+                                       title="Modifier la procédure"><i class="fas fa-pen"></i></a>
+                                    <a th:href="@{/procedure/{id}/questions(id=${p.id})}" class="btn btn-sm btn-outline-secondary"
+                                       title="Banque de questions"><i class="fas fa-question-circle"></i></a>
+                                </th:block>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    $(function () {
+        const table = $('#tableProcedures').DataTable({
+            language: {url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'},
+            pageLength: 25,
+            order: [],
+            columnDefs: [{targets: 'no-sort', orderable: false}]
+        });
+        $('#filtreDirection').on('change', function () {
+            const v = this.value;
+            table.column(1).search(v ? '^' + $.fn.dataTable.util.escapeRegex(v) + '$' : '', true, false).draw();
+        });
+    });
+</script>
+</body>
+</html>
