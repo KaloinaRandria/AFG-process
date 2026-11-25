@@ -124,11 +124,11 @@
         </div>
 
         <!-- ═══════════════════ ADMINISTRATION ═══════════════════ -->
-        <div class="sidebar-groupe-menu" sec:authorize="hasAnyRole('ADMIN', 'IT', 'IT_MAKER', 'IT_CHECKER')">
+        <div class="sidebar-groupe-menu" sec:authorize="hasAnyRole('ADMIN', 'IT', 'MAKER', 'CHECKER')">
         <div class="sidebar-categorie"><span>Administration</span></div>
 
         <!-- Utilisateurs : équipe IT, circuit maker-checker -->
-        <div class="accordion-item bg-transparent border-0" sec:authorize="hasAnyRole('IT', 'IT_MAKER', 'IT_CHECKER')">
+        <div class="accordion-item bg-transparent border-0" sec:authorize="hasAnyRole('IT', 'MAKER', 'CHECKER')">
             <h2 class="accordion-header">
                 <button class="accordion-button bg-transparent text-start text-white sidebar-button collapsed"
                         type="button"
@@ -155,7 +155,7 @@
                                 <i class="fas fa-list me-2"></i> Liste des utilisateurs
                             </a>
                         </li>
-                        <li sec:authorize="hasRole('IT_MAKER')">
+                        <li sec:authorize="hasRole('MAKER')">
                             <a class="nav-link text-white sidebar-sub"
                                th:href="@{/user/add}"
                                th:classappend="${currentUri == '/user/add' ? 'active' : ''}">

@@ -20,12 +20,12 @@ import java.util.List;
 
 /**
  * Gestion des utilisateurs par l'IT, en maker-checker :
- * IT (consultation), IT_MAKER (saisie des demandes), IT_CHECKER (validation / rejet).
+ * IT (consultation), MAKER (saisie des demandes), CHECKER (validation / rejet).
  * Le mot de passe reste vérifié par l'Active Directory : seuls le mail, l'identité et les rôles sont gérés ici.
  */
 @Controller
 @RequestMapping("/user")
-@PreAuthorize("hasAnyRole('IT', 'IT_MAKER', 'IT_CHECKER')")
+@PreAuthorize("hasAnyRole('IT', 'MAKER', 'CHECKER')")
 public class UtilisateurController {
 
     private final UtilisateurService utilisateurService;
@@ -39,7 +39,7 @@ public class UtilisateurController {
         this.directionService = directionService;
     }
 
-    // ── Consultation (IT, IT_MAKER, IT_CHECKER) ─────────────────────────────────
+    // ── Consultation (IT, MAKER, CHECKER) ─────────────────────────────────
 
     @GetMapping("/list")
     public String list(Model model) {
@@ -68,21 +68,21 @@ public class UtilisateurController {
         return "user/demande";
     }
 
-    // ── Saisie (IT_MAKER) ────────────────────────────────────────────────────
+    // ── Saisie (MAKER) ────────────────────────────────────────────────────
 
-    @PreAuthorize("hasRole('IT_MAKER')")
+    @PreAuthorize("hasRole('MAKER')")
     @GetMapping("/add")
     public String add(Model model) {
         return formulaire(new Utilisateur(), model);
     }
 
-    @PreAuthorize("hasRole('IT_MAKER')")
+    @PreAuthorize("hasRole('MAKER')")
     @GetMapping("/{id:\\d+}/edit")
     public String edit(@PathVariable Integer id, Model model) {
         return formulaire(utilisateurService.get(id), model);
     }
 
-    @PreAuthorize("hasRole('IT_MAKER')")
+    @PreAuthorize("hasRole('MAKER')")
     @PostMapping("/save")
     public String save(@RequestParam(required = false) Integer id, @RequestParam String mail,
                        @RequestParam(required = false) String nom, @RequestParam(required = false) String prenom,
@@ -93,7 +93,7 @@ public class UtilisateurController {
         try {
             DemandeUtilisateur d = demandeService.soumettre(moi, id, mail, nom, prenom, idDirection, roles, actif);
             ra.addFlashAttribute("ok", "Demande de " + d.getType().getLibelle().toLowerCase() + " pour <b>"
-                    + HtmlUtils.htmlEscape(d.getMail()) + "</b> enregistrée.<br>Elle doit maintenant être validée par un IT_CHECKER.");
+                    + HtmlUtils.htmlEscape(d.getMail()) + "</b> enregistrée.<br>Elle doit maintenant être validée par un CHECKER.");
             return "redirect:/user/demande/" + d.getId();
         } catch (MetierException e) {
             ra.addFlashAttribute("ko", HtmlUtils.htmlEscape(e.getMessage()));
@@ -101,7 +101,7 @@ public class UtilisateurController {
         }
     }
 
-    @PreAuthorize("hasRole('IT_MAKER')")
+    @PreAuthorize("hasRole('MAKER')")
     @PostMapping("/demande/{id:\\d+}/annuler")
     public String annuler(@PathVariable Integer id, @AuthenticationPrincipal Utilisateur moi, RedirectAttributes ra) {
         demandeService.annuler(id, moi);
@@ -109,9 +109,9 @@ public class UtilisateurController {
         return "redirect:/user/demandes";
     }
 
-    // ── Validation (IT_CHECKER) ─────────────────────────────────────────────────
+    // ── Validation (CHECKER) ─────────────────────────────────────────────────
 
-    @PreAuthorize("hasRole('IT_CHECKER')")
+    @PreAuthorize("hasRole('CHECKER')")
     @PostMapping("/demande/{id:\\d+}/valider")
     public String valider(@PathVariable Integer id, @RequestParam(required = false) String commentaire,
                           @AuthenticationPrincipal Utilisateur moi, RedirectAttributes ra) {
@@ -125,7 +125,7 @@ public class UtilisateurController {
         return "redirect:/user/demande/" + id;
     }
 
-    @PreAuthorize("hasRole('IT_CHECKER')")
+    @PreAuthorize("hasRole('CHECKER')")
     @PostMapping("/demande/{id:\\d+}/rejeter")
     public String rejeter(@PathVariable Integer id, @RequestParam(required = false) String motif,
                           @AuthenticationPrincipal Utilisateur moi, RedirectAttributes ra) {

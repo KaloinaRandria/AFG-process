@@ -14,7 +14,7 @@ import java.util.*;
 
 /**
  * Circuit maker-checker de la gestion des utilisateurs :
- * l'IT_MAKER saisit une demande, un IT_CHECKER différent la valide (le compte est alors
+ * l'MAKER saisit une demande, un CHECKER différent la valide (le compte est alors
  * créé ou modifié) ou la rejette avec un motif. Personne ne traite une demande
  * qui le concerne ou qu'il a saisie lui-même.
  */
@@ -65,7 +65,7 @@ public class DemandeUtilisateurService {
     // ── Maker ────────────────────────────────────────────────────────────────
 
     /**
-     * Saisie d'une demande par un IT_MAKER.
+     * Saisie d'une demande par un MAKER.
      * @param idUtilisateur null pour une création, l'id du compte pour une modification
      */
     @Transactional
@@ -159,12 +159,12 @@ public class DemandeUtilisateurService {
     /** Raison pour laquelle cet utilisateur ne peut pas traiter la demande, ou null s'il le peut. */
     public String empechementChecker(DemandeUtilisateur d, Utilisateur checker) {
         if (d.getMaker().getId() == checker.getId()) {
-            return "Vous avez saisi cette demande : un autre IT_CHECKER doit la valider.";
+            return "Vous avez saisi cette demande : un autre CHECKER doit la valider.";
         }
         boolean concerne = (d.getUtilisateur() != null && d.getUtilisateur().getId() == checker.getId())
                 || d.getMail().equalsIgnoreCase(checker.getMail());
         if (concerne) {
-            return "Cette demande concerne votre propre compte : un autre IT_CHECKER doit la valider.";
+            return "Cette demande concerne votre propre compte : un autre CHECKER doit la valider.";
         }
         return null;
     }

@@ -22,7 +22,7 @@
                 <a th:href="@{/user/demandes}" class="btn btn-outline-secondary">
                     <i class="fas fa-user-check me-1"></i> Demandes
                 </a>
-                <a sec:authorize="hasRole('IT_MAKER')" th:href="@{/user/add}" class="btn btn-gradient-blue">
+                <a sec:authorize="hasRole('MAKER')" th:href="@{/user/add}" class="btn btn-gradient-blue">
                     <i class="fas fa-user-plus me-1"></i> Demande de création
                 </a>
             </div>
@@ -50,7 +50,7 @@
                                 <span th:if="${enAttente.contains(u.id)}" class="st-badge st-encours">Modification en attente</span>
                             </td>
                             <td class="text-end">
-                                <a sec:authorize="hasRole('IT_MAKER')" th:unless="${enAttente.contains(u.id)}"
+                                <a sec:authorize="hasRole('MAKER')" th:unless="${enAttente.contains(u.id)}"
                                    th:href="@{/user/{id}/edit(id=${u.id})}" class="btn btn-sm btn-outline-secondary"
                                    title="Demande de modification">
                                     <i class="fas fa-pen"></i>

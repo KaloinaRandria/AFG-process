@@ -105,7 +105,7 @@
                 </div>
 
                 <!-- Checker : validation ou rejet -->
-                <div class="card mb-3" th:if="${d.enAttente}" sec:authorize="hasRole('IT_CHECKER')">
+                <div class="card mb-3" th:if="${d.enAttente}" sec:authorize="hasRole('CHECKER')">
                     <div class="card-header"><h6 class="mb-0"><i class="fas fa-gavel me-2"></i>Décision</h6></div>
                     <div class="card-body">
                         <div th:if="${empechement}" class="alert alert-warning small mb-0">
@@ -136,7 +136,7 @@
                 </div>
 
                 <!-- Maker : annulation de sa propre demande -->
-                <form th:if="${d.enAttente and d.maker.id == moi.id}" sec:authorize="hasRole('IT_MAKER')"
+                <form th:if="${d.enAttente and d.maker.id == moi.id}" sec:authorize="hasRole('MAKER')"
                       th:action="@{/user/demande/{id}/annuler(id=${d.id})}" method="post"
                       data-confirmer="Annuler votre demande ?" data-confirmer-type="warning" data-confirmer-bouton="Annuler la demande">
                     <button type="submit" class="btn btn-outline-secondary w-100">
