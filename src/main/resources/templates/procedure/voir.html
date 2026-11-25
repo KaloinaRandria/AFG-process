@@ -35,81 +35,95 @@
             </div>
         </div>
 
-        <div class="row g-3">
-            <!-- Panneau : résultat et quiz -->
-            <div class="col-xl-4 order-xl-2">
-                <div class="card mb-3">
-                    <div class="card-header"><h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Évaluation</h6></div>
-                    <div class="card-body">
-                        <div th:if="${derniere != null}" class="mb-3">
-                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="text-muted small">Dernier résultat</span>
+        <!-- Bandeau : évaluation (dernier résultat, quiz) et description -->
+        <div class="card mb-3">
+            <div class="card-body d-flex flex-wrap align-items-center gap-3 py-3">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <span class="eval-icone d-none d-md-grid">
+                        <i class="fas fa-clipboard-check"></i>
+                    </span>
+                    <th:block th:if="${derniere != null}">
+                        <div>
+                            <div class="small text-muted">Dernier résultat</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fs-5 fw-bold"><span th:text="${derniere.note}"></span><span class="text-muted fs-6"> / <span th:text="${derniere.nbQuestions}"></span></span></span>
                                 <span class="st-badge" th:classappend="${derniere.formationRequise} ? 'st-formation' : 'st-acquis'"
                                       th:text="${derniere.resultat.libelle}"></span>
                             </div>
-                            <div class="fs-4 fw-bold">
-                                <span th:text="${derniere.note}"></span><span class="text-muted fs-6"> / <span th:text="${derniere.nbQuestions}"></span></span>
-                            </div>
-                            <div class="small text-muted">
-                                le <span th:text="${#temporals.format(derniere.dateFin, 'dd/MM/yyyy à HH:mm')}"></span> ·
-                                <a th:href="@{/evaluation/{id}/resultat(id=${derniere.id})}">voir le détail</a>
-                            </div>
                         </div>
-
-                        <div th:if="${derniere != null and derniere.formationRequise}" class="alert alert-danger small">
-                            <i class="fas fa-chalkboard-teacher"></i>
-                            <b>Formation requise.</b> Lisez attentivement la procédure, puis repassez le quiz.
+                        <div class="small text-muted">
+                            le <span th:text="${#temporals.format(derniere.dateFin, 'dd/MM/yyyy à HH:mm')}"></span><br>
+                            <a th:href="@{/evaluation/{id}/resultat(id=${derniere.id})}">voir le détail</a>
                         </div>
-
-                        <p class="small text-muted" th:if="${derniere == null}">
-                            Quiz de <b th:text="${nbQuestionsQuiz}"></b> questions tirées au hasard.
-                            Note minimale pour valider : <b th:text="|${procedure.seuilReussite}/${nbQuestionsQuiz}|"></b>.
-                            En dessous, la formation sur cette procédure vous sera demandée.
-                        </p>
-
-                        <form th:if="${quizDispo}" th:action="@{/evaluation/demarrer/{id}(id=${procedure.id})}" method="post"
-                              data-chargement="Préparation du quiz…">
-                            <button type="submit" class="btn btn-gradient-green w-100">
-                                <i class="fas fa-play me-1"></i>
-                                <span th:text="${enCours} ? 'Reprendre le quiz' : (${derniere != null} ? 'Repasser le quiz' : 'Passer le quiz')"></span>
-                            </button>
-                        </form>
-                        <div th:unless="${quizDispo}" class="alert alert-warning small mb-0">
-                            <i class="fas fa-info-circle"></i>
-                            Le quiz de cette procédure n'est pas encore disponible.
-                            <span sec:authorize="hasRole('ADMIN')">
-                                (<span th:text="${nbQuestionsActives}"></span> question(s) active(s) sur
-                                <span th:text="${nbQuestionsQuiz}"></span> nécessaires)
-                            </span>
-                        </div>
+                    </th:block>
+                    <div class="small text-muted" th:if="${derniere == null}" style="max-width: 520px">
+                        Lisez la procédure ci-dessous, puis passez le quiz de <b th:text="${nbQuestionsQuiz}"></b> questions.
+                        Note minimale pour valider : <b th:text="|${procedure.seuilReussite}/${nbQuestionsQuiz}|"></b> ;
+                        en dessous, la formation sur cette procédure vous sera demandée.
                     </div>
                 </div>
 
-                <div class="card" th:if="${procedure.description}">
-                    <div class="card-header"><h6 class="mb-0"><i class="fas fa-align-left me-2"></i>Description</h6></div>
-                    <div class="card-body small" style="white-space: pre-line" th:text="${procedure.description}"></div>
+                <div th:if="${derniere != null and derniere.formationRequise}" class="alert alert-danger small mb-0 py-2">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <b>Formation requise :</b> lisez la procédure, puis repassez le quiz.
                 </div>
-            </div>
 
-            <!-- Document PDF -->
-            <div class="col-xl-8 order-xl-1">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="fas fa-file-pdf me-2 text-danger"></i><span th:text="${procedure.fichierNom}">Document</span></h6>
-                        <a th:if="${procedure.hasFichier()}" class="btn btn-sm btn-outline-secondary"
-                           th:href="@{/procedure/{id}/pdf(id=${procedure.id},telecharger=1)}">
-                            <i class="fas fa-download me-1"></i> Télécharger
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <iframe th:if="${procedure.hasFichier()}" class="pdf-cadre"
-                                th:src="@{/procedure/{id}/pdf(id=${procedure.id})}" title="Document de la procédure"></iframe>
-                        <div th:unless="${procedure.hasFichier()}" class="text-muted">Aucun document.</div>
+                <div class="ms-auto">
+                    <form th:if="${quizDispo}" th:action="@{/evaluation/demarrer/{id}(id=${procedure.id})}" method="post"
+                          data-chargement="Préparation du quiz…">
+                        <button type="submit" class="btn btn-gradient-green px-4">
+                            <i class="fas fa-play me-1"></i>
+                            <span th:text="${enCours} ? 'Reprendre le quiz' : (${derniere != null} ? 'Repasser le quiz' : 'Passer le quiz')"></span>
+                        </button>
+                    </form>
+                    <div th:unless="${quizDispo}" class="alert alert-warning small mb-0 py-2">
+                        <i class="fas fa-info-circle"></i>
+                        Quiz pas encore disponible.
+                        <span sec:authorize="hasRole('ADMIN')">
+                            (<span th:text="${nbQuestionsActives}"></span> question(s) active(s) sur
+                            <span th:text="${nbQuestionsQuiz}"></span> nécessaires)
+                        </span>
                     </div>
                 </div>
             </div>
+            <div class="card-footer small text-muted py-2" th:if="${procedure.description}"
+                 style="white-space: pre-line" th:text="${procedure.description}"></div>
+        </div>
+
+        <!-- Document PDF : toute la largeur, hauteur de l'écran -->
+        <div class="card" id="carteDocument">
+            <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-file-pdf me-2 text-danger"></i><span th:text="${procedure.fichierNom}">Document</span></h6>
+                <div class="d-flex gap-2" th:if="${procedure.hasFichier()}">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPleinEcran">
+                        <i class="fas fa-expand me-1"></i> Plein écran
+                    </button>
+                    <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
+                       th:href="@{/procedure/{id}/pdf(id=${procedure.id})}">
+                        <i class="fas fa-external-link-alt me-1"></i> Nouvel onglet
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary"
+                       th:href="@{/procedure/{id}/pdf(id=${procedure.id},telecharger=1)}">
+                        <i class="fas fa-download me-1"></i> Télécharger
+                    </a>
+                </div>
+            </div>
+            <!-- #view=FitH : le PDF s'ouvre ajusté à la largeur du cadre ; navpanes=0 : sans vignettes -->
+            <iframe th:if="${procedure.hasFichier()}" class="pdf-cadre" id="cadrePdf" allowfullscreen
+                    th:src="@{/procedure/{id}/pdf(id=${procedure.id})} + '#view=FitH&navpanes=0'"
+                    title="Document de la procédure"></iframe>
+            <div th:unless="${procedure.hasFichier()}" class="card-body text-muted">Aucun document.</div>
         </div>
     </section>
 </div>
+<script>
+    (function () {
+        const bouton = document.getElementById('btnPleinEcran');
+        const cadre = document.getElementById('cadrePdf');
+        if (!bouton || !cadre) return;
+        if (!cadre.requestFullscreen) { bouton.classList.add('d-none'); return; }
+        bouton.addEventListener('click', () => cadre.requestFullscreen());
+    })();
+</script>
 </body>
 </html>

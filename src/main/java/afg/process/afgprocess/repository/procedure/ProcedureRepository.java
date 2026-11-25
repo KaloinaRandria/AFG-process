@@ -18,4 +18,8 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Integer> {
     Optional<Procedure> findByReferenceIgnoreCase(String reference);
 
     long countByDirectionId(Integer idDirection);
+
+    List<Procedure> findByDirectionId(Integer idDirection);
+
+    Optional<Procedure> findFirstByFichierStockeIgnoreCase(String fichierStocke);
 }
