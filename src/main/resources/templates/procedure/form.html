@@ -31,53 +31,57 @@
         <form th:action="@{/procedure/save}" th:object="${form}" method="post" enctype="multipart/form-data"
               data-chargement="Enregistrement…">
             <input type="hidden" th:field="*{id}"/>
-            <div class="card" style="max-width: 900px">
+            <div class="card">
                 <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label" for="reference">Référence *</label>
-                            <input type="text" class="form-control" th:field="*{reference}" maxlength="50" required
-                                   placeholder="ex. PRO-DSI-004">
+                    <div class="row g-4">
+                        <!-- Colonne gauche : identification, document, seuil -->
+                        <div class="col-xl-7">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label" for="reference">Référence *</label>
+                                    <input type="text" class="form-control" th:field="*{reference}" maxlength="50" required
+                                           placeholder="ex. PRO-DSI-004">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label" for="idDirection">Direction *</label>
+                                    <select class="form-select" th:field="*{idDirection}" required>
+                                        <option value="">— Choisir —</option>
+                                        <option th:each="d : ${directions}" th:value="${d.id}"
+                                                th:text="${d.nomAffiche} + (${d.actif} ? '' : ' (inactive)')"></option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="titre">Titre *</label>
+                                    <input type="text" class="form-control" th:field="*{titre}" maxlength="255" required>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label" for="fichier">
+                                        Document PDF <span th:text="${form.id == null} ? '*' : ''"></span>
+                                    </label>
+                                    <input type="file" class="form-control" id="fichier" name="fichier"
+                                           accept="application/pdf,.pdf" th:required="${form.id == null}">
+                                    <div class="form-text" th:if="${form.fichierNom}">
+                                        Fichier actuel : <b th:text="${form.fichierNom}"></b>
+                                        — choisissez un fichier seulement pour le remplacer.
+                                    </div>
+                                    <div class="form-text">Le fichier est enregistré sur le serveur (50 Mo maximum).</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="seuilReussite">Note minimale pour valider *</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" th:field="*{seuilReussite}" min="1"
+                                               th:max="${nbQuestionsQuiz}" required>
+                                        <span class="input-group-text">/ <span th:text="${nbQuestionsQuiz}"></span></span>
+                                    </div>
+                                    <div class="form-text">En dessous : formation requise.</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-8">
-                            <label class="form-label" for="idDirection">Direction *</label>
-                            <select class="form-select" th:field="*{idDirection}" required>
-                                <option value="">— Choisir —</option>
-                                <option th:each="d : ${directions}" th:value="${d.id}"
-                                        th:text="${d.nomAffiche} + (${d.actif} ? '' : ' (inactive)')"></option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label" for="titre">Titre *</label>
-                            <input type="text" class="form-control" th:field="*{titre}" maxlength="255" required>
-                        </div>
-                        <div class="col-12">
+                        <!-- Colonne droite : description et statut -->
+                        <div class="col-xl-5 d-flex flex-column">
                             <label class="form-label" for="description">Description</label>
-                            <textarea class="form-control" th:field="*{description}" rows="3" maxlength="2000"
+                            <textarea class="form-control flex-grow-1 mb-3" th:field="*{description}" rows="5" maxlength="2000"
                                       placeholder="Objet de la procédure, public concerné…"></textarea>
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label" for="fichier">
-                                Document PDF <span th:text="${form.id == null} ? '*' : ''"></span>
-                            </label>
-                            <input type="file" class="form-control" id="fichier" name="fichier"
-                                   accept="application/pdf,.pdf" th:required="${form.id == null}">
-                            <div class="form-text" th:if="${form.fichierNom}">
-                                Fichier actuel : <b th:text="${form.fichierNom}"></b>
-                                — choisissez un fichier seulement pour le remplacer.
-                            </div>
-                            <div class="form-text">Le fichier est enregistré sur le serveur (50 Mo maximum).</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="seuilReussite">Note minimale pour valider *</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" th:field="*{seuilReussite}" min="1"
-                                       th:max="${nbQuestionsQuiz}" required>
-                                <span class="input-group-text">/ <span th:text="${nbQuestionsQuiz}"></span></span>
-                            </div>
-                            <div class="form-text">En dessous : formation requise.</div>
-                        </div>
-                        <div class="col-12">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" th:field="*{actif}">
                                 <label class="form-check-label" for="actif1">Procédure active (visible des collaborateurs)</label>

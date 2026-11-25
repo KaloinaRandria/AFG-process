@@ -13,7 +13,7 @@
 <body>
 <div th:replace="~{fragment/sidebar :: sidebar}"></div>
 <div class="main-content">
-    <section style="max-width: 880px"
+    <section
              th:with="e=${evaluation}, p=${evaluation.procedure}, proprietaire=${evaluation.utilisateur.id == moi.id}">
         <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
 

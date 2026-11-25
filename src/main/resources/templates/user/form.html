@@ -22,7 +22,7 @@
             <a th:href="@{/user/list}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Utilisateurs</a>
         </div>
 
-        <div class="alert alert-info" style="max-width: 860px">
+        <div class="alert alert-info">
             <i class="fas fa-user-check"></i>
             Circuit de validation : votre saisie crée une <b>demande</b>. Le compte ne sera
             <span th:text="${nouveau} ? 'créé' : 'modifié'"></span> qu'après validation par un <b>IT_CHECKER</b>
@@ -31,27 +31,27 @@
 
         <form th:action="@{/user/save}" method="post" data-chargement="Enregistrement…">
             <input type="hidden" name="id" th:if="${!nouveau}" th:value="${u.id}">
-            <div class="card" style="max-width: 860px">
+            <div class="card">
                 <div class="card-body">
                     <p class="text-muted small">
                         Le mot de passe est celui de l'Active Directory : le mail doit correspondre
                         au compte AD du collaborateur.
                     </p>
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-md-6 col-xl-4">
                             <label class="form-label" for="mail">Mail *</label>
                             <input type="email" class="form-control" id="mail" name="mail" th:value="${u.mail}" required
                                    placeholder="prenom.nom@afgbank.mg">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-xl-4">
                             <label class="form-label" for="prenom">Prénom</label>
                             <input type="text" class="form-control" id="prenom" name="prenom" th:value="${u.prenom}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-xl-4">
                             <label class="form-label" for="nom">Nom</label>
                             <input type="text" class="form-control" id="nom" name="nom" th:value="${u.nom}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-xl-4">
                             <label class="form-label" for="idDirection">Direction</label>
                             <select class="form-select" id="idDirection" name="idDirection">
                                 <option value="">—</option>
@@ -59,7 +59,7 @@
                                         th:selected="${u.direction != null and u.direction.id == d.id}"></option>
                             </select>
                         </div>
-                        <div class="col-md-6 d-flex align-items-end">
+                        <div class="col-md-6 col-xl-8 d-flex align-items-end">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="actif" name="actif" value="true"
                                        th:checked="${u.actif}">
@@ -73,7 +73,7 @@
                                 Sans rôle, le compte est un collaborateur : il consulte les procédures et passe les quiz.
                             </p>
                             <div class="row g-2">
-                                <div class="col-md-6" th:each="r : ${roles}">
+                                <div class="col-md-6 col-xl-3" th:each="r : ${roles}">
                                     <label class="quiz-choix mb-0 h-100">
                                         <input class="form-check-input" type="checkbox" name="roles" th:value="${r.name()}"
                                                th:checked="${u.codesRoles.contains(r.name())}">
