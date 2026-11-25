@@ -1,6 +1,11 @@
 package afg.process.afgprocess.controller;
 
+import afg.process.afgprocess.controller.support.ListeTri;
 import afg.process.afgprocess.dto.ProcedureForm;
+import afg.process.afgprocess.dto.filtre.ProcedureFiltre;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import afg.process.afgprocess.model.evaluation.Evaluation;
 import afg.process.afgprocess.model.procedure.Procedure;
 import afg.process.afgprocess.model.utilisateur.Utilisateur;
@@ -46,16 +51,20 @@ public class ProcedureController {
     }
 
     /** Catalogue des procédures, avec le dernier résultat du collaborateur connecté. */
+    private static final ListeTri TRI = ListeTri.par(Sort.by("direction.code", "reference"),
+            "reference", "titre", "direction.code", "dateMiseAJour");
+
     @GetMapping("/list")
-    public String list(@AuthenticationPrincipal Utilisateur moi, Model model) {
-        List<Procedure> procedures = moi.isAdmin() ? procedureService.toutes() : procedureService.actives();
-        model.addAttribute("procedures", procedures);
-        model.addAttribute("directions", directionService.actives());
+    public String list(@ModelAttribute("filtre") ProcedureFiltre filtre, @PageableDefault(size = 20) Pageable pageable,
+                       @AuthenticationPrincipal Utilisateur moi, Model model) {
+        model.addAttribute("page", procedureService.rechercher(filtre, moi,
+                TRI.appliquer(pageable)));
+        model.addAttribute("directions", moi.isAdmin() ? directionService.toutes() : directionService.actives());
         model.addAttribute("nbQuestions", procedureService.nbQuestionsActives());
         model.addAttribute("nbQuestionsQuiz", procedureService.getNbQuestionsQuiz());
         model.addAttribute("derniers", evaluationService.derniersResultats(moi));
         model.addAttribute("enCours", evaluationService.proceduresEnCours(moi));
-        return "procedure/list";
+        return "procedure/procedure-liste";
     }
 
     /** Fiche de la procédure : lecture du PDF (support de formation) et accès au quiz. */
@@ -71,7 +80,7 @@ public class ProcedureController {
         model.addAttribute("enCours", evaluationService.proceduresEnCours(moi).contains(id));
         model.addAttribute("nbQuestionsActives", procedureService.nbQuestionsActives(id));
         model.addAttribute("nbQuestionsQuiz", procedureService.getNbQuestionsQuiz());
-        return "procedure/voir";
+        return "procedure/procedure-fiche";
     }
 
     /** Fichier PDF : affiché dans le navigateur, ou téléchargé avec ?telecharger. */
@@ -128,6 +137,6 @@ public class ProcedureController {
         model.addAttribute("form", form);
         model.addAttribute("directions", directionService.toutes());
         model.addAttribute("nbQuestionsQuiz", procedureService.getNbQuestionsQuiz());
-        return "procedure/form";
+        return "procedure/procedure-saisie";
     }
 }

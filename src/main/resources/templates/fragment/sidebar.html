@@ -232,7 +232,7 @@
                 if (mobile()) { fermer(); return; }
                 const reduit = html.classList.toggle("sidebar-reduit");
                 try { localStorage.setItem("sidebarReduit", reduit ? "1" : "0"); } catch (e) { /* non mémorisé */ }
-                // Les tableaux (DataTables) recalculent leur largeur
+                // Les éléments qui dépendent de la largeur (PDF, tableaux) se recalculent
                 setTimeout(() => window.dispatchEvent(new Event("resize")), 220);
             });
 

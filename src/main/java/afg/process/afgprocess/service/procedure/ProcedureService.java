@@ -1,6 +1,11 @@
 package afg.process.afgprocess.service.procedure;
 
 import afg.process.afgprocess.dto.ProcedureForm;
+import afg.process.afgprocess.dto.filtre.ProcedureFiltre;
+import afg.process.afgprocess.model.utilisateur.Utilisateur;
+import afg.process.afgprocess.repository.specification.ProcedureSpecifications;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import afg.process.afgprocess.model.procedure.Procedure;
 import afg.process.afgprocess.repository.procedure.ProcedureRepository;
 import afg.process.afgprocess.repository.procedure.QuestionRepository;
@@ -47,6 +52,11 @@ public class ProcedureService {
 
     public List<Procedure> actives() {
         return procedureRepository.findActivesTriees();
+    }
+
+    /** Recherche multicritère paginée (un collaborateur ne voit que les procédures actives). */
+    public Page<Procedure> rechercher(ProcedureFiltre filtre, Utilisateur moi, Pageable pageable) {
+        return procedureRepository.findAll(ProcedureSpecifications.filtre(filtre, moi.getId(), moi.isAdmin()), pageable);
     }
 
     public Procedure get(Integer id) {

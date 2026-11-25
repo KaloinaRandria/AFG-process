@@ -15,7 +15,12 @@ import afg.process.afgprocess.repository.procedure.QuestionRepository;
 import afg.process.afgprocess.repository.utilisateur.UtilisateurRepository;
 import afg.process.afgprocess.service.exception.MetierException;
 import afg.process.afgprocess.service.procedure.ProcedureService;
+import afg.process.afgprocess.dto.filtre.EvaluationFiltre;
+import afg.process.afgprocess.repository.specification.EvaluationSpecifications;
 import org.hibernate.Hibernate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -166,23 +171,60 @@ public class EvaluationService {
         return ids;
     }
 
-    /** Toutes les évaluations terminées (historique complet, pour le suivi). */
-    public List<Evaluation> toutesTerminees() {
-        return evaluationRepository.findTerminees();
+    // ── Listes paginées et filtrées ─────────────────────────────────────────
+
+    /** Quiz terminés du collaborateur, filtrés et paginés. */
+    public Page<Evaluation> mesEvaluations(EvaluationFiltre filtre, Utilisateur utilisateur, Pageable pageable) {
+        return evaluationRepository.findAll(EvaluationSpecifications.filtre(filtre, utilisateur.getId(), false), pageable);
     }
 
-    /** Situation actuelle : dernier résultat de chaque collaborateur sur chaque procédure. */
-    public List<SuiviLigne> situationActuelle(List<Evaluation> terminees) {
-        Map<String, Evaluation> derniere = new LinkedHashMap<>();
-        Map<String, Long> tentatives = new HashMap<>();
-        for (Evaluation e : terminees) {   // triées de la plus récente à la plus ancienne
-            String cle = e.getUtilisateur().getId() + "-" + e.getProcedure().getId();
-            derniere.putIfAbsent(cle, e);
-            tentatives.merge(cle, 1L, Long::sum);
+    /**
+     * Suivi : vue « situation » (dernier quiz de chaque collaborateur sur chaque procédure,
+     * avec le nombre de tentatives) ou « historique » (tous les quiz).
+     */
+    public Page<SuiviLigne> suivi(EvaluationFiltre filtre, Pageable pageable) {
+        Page<Evaluation> page = evaluationRepository.findAll(
+                EvaluationSpecifications.filtre(filtre, null, !filtre.isHistorique()), pageable);
+        Map<String, Long> tentatives = tentatives(page.getContent());
+        return page.map(e -> new SuiviLigne(e, tentatives.getOrDefault(cle(e), 1L)));
+    }
+
+    /** Toutes les lignes du suivi correspondant aux filtres (export). */
+    public List<SuiviLigne> suiviComplet(EvaluationFiltre filtre, Sort tri) {
+        List<Evaluation> evaluations = evaluationRepository.findAll(
+                EvaluationSpecifications.filtre(filtre, null, !filtre.isHistorique()), tri);
+        Map<String, Long> tentatives = tentatives(evaluations);
+        return evaluations.stream().map(e -> new SuiviLigne(e, tentatives.getOrDefault(cle(e), 1L))).toList();
+    }
+
+    /** Nombre de lignes du suivi par résultat, pour les filtres donnés (hors critère de résultat). */
+    public Map<ResultatEvaluation, Long> compterParResultat(EvaluationFiltre filtre) {
+        Map<ResultatEvaluation, Long> m = new EnumMap<>(ResultatEvaluation.class);
+        for (ResultatEvaluation r : ResultatEvaluation.values()) {
+            EvaluationFiltre f = filtre.sansResultat();
+            f.setResultat(r);
+            m.put(r, evaluationRepository.count(EvaluationSpecifications.filtre(f, null, !f.isHistorique())));
         }
-        return derniere.entrySet().stream()
-                .map(en -> new SuiviLigne(en.getValue(), tentatives.get(en.getKey())))
-                .toList();
+        return m;
+    }
+
+    private Map<String, Long> tentatives(List<Evaluation> evaluations) {
+        Map<String, Long> m = new HashMap<>();
+        if (evaluations.isEmpty()) return m;
+        Set<Integer> idsU = new HashSet<>();
+        Set<Integer> idsP = new HashSet<>();
+        evaluations.forEach(e -> {
+            idsU.add(e.getUtilisateur().getId());
+            idsP.add(e.getProcedure().getId());
+        });
+        for (Object[] l : evaluationRepository.compterTentatives(idsU, idsP)) {
+            m.put(l[0] + "-" + l[1], (Long) l[2]);
+        }
+        return m;
+    }
+
+    private static String cle(Evaluation e) {
+        return e.getUtilisateur().getId() + "-" + e.getProcedure().getId();
     }
 
     private Evaluation getPourUtilisateur(Integer id, Utilisateur utilisateur, boolean adminAutorise) {

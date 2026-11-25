@@ -1,5 +1,7 @@
 package afg.process.afgprocess.controller;
 
+import afg.process.afgprocess.controller.support.ListeHelper;
+import afg.process.afgprocess.model.evaluation.ResultatEvaluation;
 import afg.process.afgprocess.model.utilisateur.RoleApplication;
 import afg.process.afgprocess.model.utilisateur.Utilisateur;
 import afg.process.afgprocess.service.utilisateur.DemandeUtilisateurService;
@@ -15,8 +17,11 @@ public class GlobalModelAttribute {
 
     private final DemandeUtilisateurService demandeService;
 
-    public GlobalModelAttribute(DemandeUtilisateurService demandeService) {
+    private final ListeHelper listeHelper;
+
+    public GlobalModelAttribute(DemandeUtilisateurService demandeService, ListeHelper listeHelper) {
         this.demandeService = demandeService;
+        this.listeHelper = listeHelper;
     }
 
     /** URI courante (sans le contexte) pour surligner le menu. */
@@ -24,6 +29,21 @@ public class GlobalModelAttribute {
     public void addCurrentUri(HttpServletRequest request, Model model) {
         String uri = request.getRequestURI().substring(request.getContextPath().length());
         model.addAttribute("currentUri", uri.isEmpty() ? "/" : uri);
+    }
+
+    /**
+     * Liens des listes paginées ({@link ListeHelper}), exposés comme variable « liste » :
+     * Thymeleaf 3.1 interdit les appels de bean (@…) et la lecture de « param » dans les liens.
+     */
+    @ModelAttribute("liste")
+    public ListeHelper liste() {
+        return listeHelper;
+    }
+
+    /** Résultats possibles d'un quiz (listes déroulantes des filtres). */
+    @ModelAttribute("resultats")
+    public ResultatEvaluation[] resultats() {
+        return ResultatEvaluation.values();
     }
 
     /** Nombre de demandes d'utilisateurs à valider, affiché dans le menu des CHECKER. */

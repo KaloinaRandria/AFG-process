@@ -1,5 +1,9 @@
 package afg.process.afgprocess.service.utilisateur;
 
+import afg.process.afgprocess.dto.filtre.UtilisateurFiltre;
+import afg.process.afgprocess.repository.specification.UtilisateurSpecifications;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import afg.process.afgprocess.model.utilisateur.DemandeUtilisateur;
 import afg.process.afgprocess.model.utilisateur.Role;
 import afg.process.afgprocess.model.utilisateur.Utilisateur;
@@ -27,8 +31,9 @@ public class UtilisateurService {
         return utilisateurRepository.findByMailIgnoreCase(mail).orElse(null);
     }
 
-    public List<Utilisateur> tous() {
-        return utilisateurRepository.findAllTries();
+    /** Recherche multicritère paginée. */
+    public Page<Utilisateur> rechercher(UtilisateurFiltre filtre, Pageable pageable) {
+        return utilisateurRepository.findAll(UtilisateurSpecifications.filtre(filtre), pageable);
     }
 
     public Utilisateur get(Integer id) {

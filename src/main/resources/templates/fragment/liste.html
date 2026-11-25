@@ -1,0 +1,76 @@
+<!--
+    Fragments des listes paginées côté serveur (Spring Data Page + ListeHelper, variable « liste »).
+
+    Barre de filtres : <form th:replace="~{fragment/liste :: filtres(~{::champs}, ${filtre.actif}, '')}">…</form>
+                       (formulaire GET : les filtres sont dans l'URL, la page peut être mise en favori)
+    En-tête triable  : <th th:replace="~{fragment/liste :: tri('Nom', 'nom')}"></th>
+    Pied de liste    : <div th:replace="~{fragment/liste :: pagination(${page})}"></div>
+-->
+
+<!--
+    Barre de filtres multicritère.
+    champs   : fragment contenant les colonnes de champs (div.col-…)
+    actif    : un filtre est-il appliqué (affiche « Réinitialiser »)
+    garder   : paramètre conservé par « Réinitialiser » (ex. 'vue'), ou ''
+-->
+<form th:fragment="filtres(champs, actif, garder)" method="get" class="card mb-3 filtres">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+            <th:block th:replace="${champs}"></th:block>
+            <div class="col-auto ms-auto d-flex gap-2">
+                <input type="hidden" name="sort" th:if="${liste.triCourant() != null}" th:value="${liste.triCourant()}">
+                <input type="hidden" name="size" th:if="${liste.parametre('size') != null}" th:value="${liste.parametre('size')}">
+                <input type="hidden" th:if="${liste.parametre(garder) != null}" th:name="${garder}" th:value="${liste.parametre(garder)}">
+                <a th:if="${actif}" th:href="${liste.reinitialiser(garder)}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> Réinitialiser
+                </a>
+                <button type="submit" class="btn btn-sm btn-gradient-blue px-3">
+                    <i class="fas fa-filter me-1"></i> Filtrer
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Colonne triable : clic = tri croissant, second clic = décroissant -->
+<th th:fragment="tri(libelle, propriete)" class="th-tri">
+    <a th:href="${liste.tri(propriete)}">
+        <span th:text="${libelle}"></span>
+        <i class="fas ms-1" th:classappend="${liste.triIcone(propriete)}"></i>
+    </a>
+</th>
+
+<!-- Pied de liste : position, nombre de lignes par page, navigation -->
+<div th:fragment="pagination(page)" class="liste-pied d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="small text-muted">
+        <th:block th:if="${page.totalElements > 0}">
+            <span th:text="${page.number * page.size + 1}"></span>–<span th:text="${page.number * page.size + page.numberOfElements}"></span>
+            sur <b th:text="${page.totalElements}"></b>
+        </th:block>
+        <span th:if="${page.totalElements == 0}">Aucun résultat</span>
+        <span class="ms-3 d-none d-md-inline">
+            Lignes par page :
+            <a th:each="t : ${ {10, 20, 50, 100} }" th:href="${liste.taille(t)}" th:text="${t}"
+               class="ms-1" th:classappend="${page.size == t} ? 'fw-bold text-decoration-none' : ''"></a>
+        </span>
+    </div>
+    <nav th:if="${page.totalPages > 1}" aria-label="Pagination">
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+                <a class="page-link" th:href="${liste.page(0)}" title="Première page"><i class="fas fa-angle-double-left"></i></a>
+            </li>
+            <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+                <a class="page-link" th:href="${liste.page(page.number - 1)}" title="Page précédente"><i class="fas fa-angle-left"></i></a>
+            </li>
+            <li class="page-item" th:each="n : ${liste.fenetre(page)}" th:classappend="${n == page.number} ? 'active'">
+                <a class="page-link" th:href="${liste.page(n)}" th:text="${n + 1}"></a>
+            </li>
+            <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+                <a class="page-link" th:href="${liste.page(page.number + 1)}" title="Page suivante"><i class="fas fa-angle-right"></i></a>
+            </li>
+            <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+                <a class="page-link" th:href="${liste.page(page.totalPages - 1)}" title="Dernière page"><i class="fas fa-angle-double-right"></i></a>
+            </li>
+        </ul>
+    </nav>
+</div>

@@ -1,5 +1,12 @@
 package afg.process.afgprocess.controller;
 
+import afg.process.afgprocess.controller.support.ListeTri;
+import afg.process.afgprocess.dto.filtre.DemandeFiltre;
+import afg.process.afgprocess.dto.filtre.UtilisateurFiltre;
+import afg.process.afgprocess.model.utilisateur.StatutDemande;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import afg.process.afgprocess.model.utilisateur.DemandeUtilisateur;
 import afg.process.afgprocess.model.utilisateur.RoleApplication;
 import afg.process.afgprocess.model.utilisateur.TypeDemande;
@@ -41,18 +48,31 @@ public class UtilisateurController {
 
     // ── Consultation (IT, MAKER, CHECKER) ─────────────────────────────────
 
+    private static final ListeTri TRI_UTILISATEURS = ListeTri.par(Sort.by("nom", "prenom"),
+            "nom", "mail", "direction.code", "actif");
+
+    private static final ListeTri TRI_DEMANDES = ListeTri.par(Sort.by(Sort.Direction.DESC, "dateTraitement"),
+            "id", "mail", "dateTraitement", "statut", "type");
+
     @GetMapping("/list")
-    public String list(Model model) {
-        model.addAttribute("utilisateurs", utilisateurService.tous());
+    public String list(@ModelAttribute("filtre") UtilisateurFiltre filtre, @PageableDefault(size = 20) Pageable pageable,
+                       Model model) {
+        model.addAttribute("page", utilisateurService.rechercher(filtre, TRI_UTILISATEURS.appliquer(pageable)));
         model.addAttribute("enAttente", demandeService.utilisateursAvecDemandeEnAttente());
-        return "user/list";
+        model.addAttribute("directions", directionService.toutes());
+        model.addAttribute("roles", RoleApplication.values());
+        return "utilisateur/utilisateur-liste";
     }
 
+    /** Demandes en attente (toutes) et historique des demandes traitées (filtré, paginé). */
     @GetMapping("/demandes")
-    public String demandes(Model model) {
+    public String demandes(@ModelAttribute("filtre") DemandeFiltre filtre, @PageableDefault(size = 20) Pageable pageable,
+                           Model model) {
         model.addAttribute("enAttente", demandeService.enAttente());
-        model.addAttribute("traitees", demandeService.traitees());
-        return "user/demandes";
+        model.addAttribute("page", demandeService.historique(filtre, TRI_DEMANDES.appliquer(pageable)));
+        model.addAttribute("types", TypeDemande.values());
+        model.addAttribute("statuts", new StatutDemande[]{StatutDemande.VALIDEE, StatutDemande.REJETEE, StatutDemande.ANNULEE});
+        return "utilisateur/demande-liste";
     }
 
     @GetMapping("/demande/{id:\\d+}")
@@ -65,7 +85,7 @@ public class UtilisateurController {
         model.addAttribute("roles", RoleApplication.values());
         model.addAttribute("empechement", demandeService.empechementChecker(d, moi));
         model.addAttribute("moi", moi);
-        return "user/demande";
+        return "utilisateur/demande-fiche";
     }
 
     // ── Saisie (MAKER) ────────────────────────────────────────────────────
@@ -142,6 +162,6 @@ public class UtilisateurController {
         model.addAttribute("utilisateur", u);
         model.addAttribute("directions", directionService.toutes());
         model.addAttribute("roles", RoleApplication.values());
-        return "user/form";
+        return "utilisateur/utilisateur-saisie";
     }
 }

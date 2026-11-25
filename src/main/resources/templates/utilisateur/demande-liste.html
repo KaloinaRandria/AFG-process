@@ -62,18 +62,52 @@
             </div>
         </div>
 
-        <!-- Historique -->
+        <!-- Historique : filtres multicritères et pagination côté serveur -->
+        <h6 class="ui-section-title mt-2 mb-2"><span>Historique</span></h6>
+        <form th:replace="~{fragment/liste :: filtres(~{::champs}, ${filtre.actif}, '')}">
+            <th:block th:ref="champs">
+                <div class="col-md-4 col-xl-4">
+                    <label class="form-label" for="q">Utilisateur</label>
+                    <input type="search" class="form-control form-control-sm" id="q" name="q" th:value="${filtre.q}"
+                           placeholder="Mail, nom ou prénom…">
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="type">Type</label>
+                    <select class="form-select form-select-sm" id="type" name="type">
+                        <option value="">Tous</option>
+                        <option th:each="t : ${types}" th:value="${t}" th:text="${t.libelle}" th:selected="${filtre.type == t}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="statut">Statut</label>
+                    <select class="form-select form-select-sm" id="statut" name="statut">
+                        <option value="">Tous</option>
+                        <option th:each="s : ${statuts}" th:value="${s}" th:text="${s.libelle}" th:selected="${filtre.statut == s}"></option>
+                    </select>
+                </div>
+            </th:block>
+        </form>
+
         <div class="card">
-            <div class="card-header"><h6 class="mb-0">Historique</h6></div>
-            <div class="card-body">
-                <div th:if="${#lists.isEmpty(traitees)}" class="text-muted text-center py-3">Aucune demande traitée.</div>
-                <div class="table-responsive" th:unless="${#lists.isEmpty(traitees)}">
-                    <table id="tableHistorique" class="table table-hover align-middle w-100">
+            <div class="card-body p-0">
+                <div th:if="${page.empty}" class="text-muted text-center py-5"
+                     th:text="${filtre.actif} ? 'Aucune demande ne correspond aux filtres.' : 'Aucune demande traitée.'"></div>
+                <div class="table-responsive" th:unless="${page.empty}">
+                    <table class="table table-hover align-middle mb-0">
                         <thead>
-                        <tr><th>N°</th><th>Type</th><th>Utilisateur</th><th>Statut</th><th>Maker</th><th>Checker</th><th>Traitée le</th><th></th></tr>
+                        <tr>
+                            <th th:replace="~{fragment/liste :: tri('N°', 'id')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Type', 'type')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Utilisateur', 'mail')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Statut', 'statut')}"></th>
+                            <th>Maker</th>
+                            <th>Checker</th>
+                            <th th:replace="~{fragment/liste :: tri('Traitée le', 'dateTraitement')}"></th>
+                            <th></th>
+                        </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="d : ${traitees}">
+                        <tr th:each="d : ${page.content}">
                             <td th:text="${d.id}"></td>
                             <td th:text="${d.type.libelle}"></td>
                             <td>
@@ -87,29 +121,19 @@
                             </td>
                             <td th:text="${d.maker.nomComplet}"></td>
                             <td th:text="${d.checker != null} ? ${d.checker.nomComplet} : '—'"></td>
-                            <td th:attr="data-order=${#temporals.format(d.dateTraitement, 'yyyyMMddHHmmss')}"
-                                th:text="${#temporals.format(d.dateTraitement, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${#temporals.format(d.dateTraitement, 'dd/MM/yyyy HH:mm')}"></td>
                             <td class="text-end">
-                                <a th:href="@{/user/demande/{id}(id=${d.id})}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-eye"></i>
-                                </a>
+                                <a th:href="@{/user/demande/{id}(id=${d.id})}" class="btn btn-sm btn-outline-secondary"
+                                   title="Voir la demande"><i class="fas fa-eye"></i></a>
                             </td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+            <div th:replace="~{fragment/liste :: pagination(${page})}"></div>
         </div>
     </section>
 </div>
-<script>
-    $(function () {
-        $('#tableHistorique').DataTable({
-            language: {url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'},
-            order: [],
-            columnDefs: [{targets: -1, orderable: false}]
-        });
-    });
-</script>
 </body>
 </html>

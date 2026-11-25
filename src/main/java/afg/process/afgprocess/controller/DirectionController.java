@@ -25,7 +25,7 @@ public class DirectionController {
     public String list(Model model) {
         model.addAttribute("directions", directionService.toutes());
         model.addAttribute("nbProcedures", directionService.nbProceduresParDirection());
-        return "direction/list";
+        return "direction/direction-saisie-liste";
     }
 
     @PostMapping("/save")

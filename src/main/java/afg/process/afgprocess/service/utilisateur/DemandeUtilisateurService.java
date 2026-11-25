@@ -1,5 +1,9 @@
 package afg.process.afgprocess.service.utilisateur;
 
+import afg.process.afgprocess.dto.filtre.DemandeFiltre;
+import afg.process.afgprocess.repository.specification.DemandeSpecifications;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import afg.process.afgprocess.model.utilisateur.*;
 import afg.process.afgprocess.repository.utilisateur.DemandeUtilisateurRepository;
 import afg.process.afgprocess.repository.utilisateur.UtilisateurRepository;
@@ -41,8 +45,9 @@ public class DemandeUtilisateurService {
         return demandeRepository.findByStatut(StatutDemande.EN_ATTENTE);
     }
 
-    public List<DemandeUtilisateur> traitees() {
-        return demandeRepository.findTraitees();
+    /** Historique des demandes traitées, filtré et paginé. */
+    public Page<DemandeUtilisateur> historique(DemandeFiltre filtre, Pageable pageable) {
+        return demandeRepository.findAll(DemandeSpecifications.historique(filtre), pageable);
     }
 
     public long nbEnAttente() {
