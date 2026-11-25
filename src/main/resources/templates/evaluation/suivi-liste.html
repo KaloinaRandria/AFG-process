@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Suivi des évaluations</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section>
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 page-actions gap-2">
+            <h1><i class="fas fa-user-graduate"></i> Suivi des évaluations</h1>
+            <a th:href="${liste.memesFiltres('/export')}" class="btn btn-outline-secondary">
+                <i class="fas fa-file-excel me-1 text-success"></i> Exporter (Excel)
+            </a>
+        </div>
+
+        <!-- Compteurs : selon les filtres appliqués, d'après le dernier quiz de chaque collaborateur -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="kpi">
+                    <div class="kpi-label">Formations requises</div>
+                    <div class="kpi-valeur text-danger" th:text="${nbFormationRequise}">0</div>
+                    <div class="small text-muted" th:text="${filtre.historique} ? 'quiz échoués' : 'collaborateur × procédure, dernier quiz'"></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="kpi">
+                    <div class="kpi-label">Acquis</div>
+                    <div class="kpi-valeur text-success" th:text="${nbAcquis}">0</div>
+                    <div class="small text-muted" th:text="${filtre.historique} ? 'quiz réussis' : 'collaborateur × procédure, dernier quiz'"></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="kpi">
+                    <div class="kpi-label" th:text="${filtre.historique} ? 'Quiz passés' : 'Lignes de suivi'">Lignes</div>
+                    <div class="kpi-valeur" th:text="${page.totalElements}">0</div>
+                    <div class="small text-muted">correspondant aux filtres</div>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav nav-pills mb-3">
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${!filtre.historique} ? 'active'" th:href="${liste.avec('vue', 'situation')}">
+                    Situation actuelle
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${filtre.historique} ? 'active'" th:href="${liste.avec('vue', 'historique')}">
+                    Historique des quiz
+                </a>
+            </li>
+        </ul>
+
+        <form th:replace="~{fragment/liste :: filtres(~{::champs}, ${filtre.actif}, 'vue')}">
+            <th:block th:ref="champs">
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="collaborateur">Collaborateur</label>
+                    <input type="search" class="form-control form-control-sm" id="collaborateur" name="collaborateur"
+                           th:value="${filtre.collaborateur}" placeholder="Nom, prénom ou mail…">
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="directionCollaborateur">Direction du collaborateur</label>
+                    <select class="form-select form-select-sm" id="directionCollaborateur" name="directionCollaborateur">
+                        <option value="">Toutes</option>
+                        <option th:each="d : ${directions}" th:value="${d.id}" th:text="${d.code}"
+                                th:selected="${filtre.directionCollaborateur == d.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="procedure">Procédure</label>
+                    <select class="form-select form-select-sm" id="procedure" name="procedure">
+                        <option value="">Toutes</option>
+                        <option th:each="p : ${procedures}" th:value="${p.id}" th:text="|${p.reference} – ${p.titre}|"
+                                th:selected="${filtre.procedure == p.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="resultat">Résultat</label>
+                    <select class="form-select form-select-sm" id="resultat" name="resultat">
+                        <option value="">Tous</option>
+                        <option th:each="r : ${resultats}" th:value="${r}" th:text="${r.libelle}"
+                                th:selected="${filtre.resultat == r}"></option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2 col-xl-auto">
+                    <label class="form-label" for="du">Du</label>
+                    <input type="date" class="form-control form-control-sm" id="du" name="du" th:value="${filtre.du}">
+                </div>
+                <div class="col-6 col-md-2 col-xl-auto">
+                    <label class="form-label" for="au">Au</label>
+                    <input type="date" class="form-control form-control-sm" id="au" name="au" th:value="${filtre.au}">
+                </div>
+            </th:block>
+        </form>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div th:if="${page.empty}" class="text-center text-muted py-5"
+                     th:text="${filtre.actif} ? 'Aucun résultat ne correspond aux filtres.' : 'Aucun quiz passé pour le moment.'"></div>
+                <div class="table-responsive" th:unless="${page.empty}">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th th:replace="~{fragment/liste :: tri('Collaborateur', 'utilisateur.nom')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Direction', 'procedure.direction.code')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Procédure', 'procedure.reference')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Note', 'note')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Résultat', 'resultat')}"></th>
+                            <th th:unless="${filtre.historique}">Tentatives</th>
+                            <th th:replace="~{fragment/liste :: tri('Date', 'dateFin')}"></th>
+                            <th class="text-end">Détail</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="l : ${page.content}" th:with="e=${l.derniere()}">
+                            <td>
+                                <div class="fw-bold" th:text="${e.utilisateur.nomComplet}"></div>
+                                <div class="small text-muted">
+                                    <span th:text="${e.utilisateur.mail}"></span>
+                                    <span th:if="${e.utilisateur.direction != null}" th:text="| · ${e.utilisateur.direction.code}|"></span>
+                                </div>
+                            </td>
+                            <td th:text="${e.procedure.direction.code}"></td>
+                            <td>
+                                <div class="pr-ref" th:text="${e.procedure.reference}"></div>
+                                <span th:text="${e.procedure.titre}"></span>
+                            </td>
+                            <td><b th:text="${e.note}"></b> / <span th:text="${e.nbQuestions}"></span></td>
+                            <td>
+                                <span class="st-badge" th:classappend="${e.formationRequise} ? 'st-formation' : 'st-acquis'"
+                                      th:text="${e.resultat.libelle}"></span>
+                            </td>
+                            <td th:unless="${filtre.historique}" th:text="${l.tentatives()}"></td>
+                            <td th:text="${#temporals.format(e.dateFin, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td class="text-end">
+                                <a th:href="@{/evaluation/{id}/resultat(id=${e.id})}" class="btn btn-sm btn-outline-secondary"
+                                   title="Voir le détail"><i class="fas fa-eye"></i></a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div th:replace="~{fragment/liste :: pagination(${page})}"></div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

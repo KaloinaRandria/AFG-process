@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Utilisateurs</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section>
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 page-actions gap-2">
+            <h1><i class="fas fa-users"></i> Utilisateurs</h1>
+            <div class="d-flex gap-2">
+                <a th:href="@{/user/demandes}" class="btn btn-outline-secondary">
+                    <i class="fas fa-user-check me-1"></i> Demandes
+                </a>
+                <a sec:authorize="hasRole('MAKER')" th:href="@{/user/add}" class="btn btn-gradient-blue">
+                    <i class="fas fa-user-plus me-1"></i> Demande de création
+                </a>
+            </div>
+        </div>
+
+        <form th:replace="~{fragment/liste :: filtres(~{::champs}, ${filtre.actif}, '')}">
+            <th:block th:ref="champs">
+                <div class="col-md-4 col-xl-3">
+                    <label class="form-label" for="q">Recherche</label>
+                    <input type="search" class="form-control form-control-sm" id="q" name="q" th:value="${filtre.q}"
+                           placeholder="Nom, prénom ou mail…">
+                </div>
+                <div class="col-md-4 col-xl-3">
+                    <label class="form-label" for="direction">Direction</label>
+                    <select class="form-select form-select-sm" id="direction" name="direction">
+                        <option value="">Toutes</option>
+                        <option th:each="d : ${directions}" th:value="${d.id}" th:text="${d.nomAffiche}"
+                                th:selected="${filtre.direction == d.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="role">Rôle</label>
+                    <select class="form-select form-select-sm" id="role" name="role">
+                        <option value="">Tous</option>
+                        <option value="COLLABORATEUR" th:selected="${filtre.role == 'COLLABORATEUR'}">Collaborateur (sans rôle)</option>
+                        <option th:each="r : ${roles}" th:value="${r.name()}" th:text="${r.libelle}"
+                                th:selected="${filtre.role == r.name()}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="statut">Statut</label>
+                    <select class="form-select form-select-sm" id="statut" name="statut">
+                        <option value="">Tous</option>
+                        <option value="ACTIFS" th:selected="${filtre.statut == 'ACTIFS'}">Actifs</option>
+                        <option value="INACTIFS" th:selected="${filtre.statut == 'INACTIFS'}">Désactivés</option>
+                    </select>
+                </div>
+            </th:block>
+        </form>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div th:if="${page.empty}" class="text-muted text-center py-5"
+                     th:text="${filtre.actif} ? 'Aucun utilisateur ne correspond aux filtres.' : 'Aucun utilisateur.'"></div>
+                <div class="table-responsive" th:unless="${page.empty}">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th th:replace="~{fragment/liste :: tri('Nom', 'nom')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Mail', 'mail')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Direction', 'direction.code')}"></th>
+                            <th>Rôles</th>
+                            <th th:replace="~{fragment/liste :: tri('Statut', 'actif')}"></th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="u : ${page.content}">
+                            <td class="fw-bold" th:text="${u.nomComplet}"></td>
+                            <td th:text="${u.mail}"></td>
+                            <td th:text="${u.direction != null} ? ${u.direction.code} : '—'"
+                                th:title="${u.direction != null} ? ${u.direction.libelle} : ''"></td>
+                            <td>
+                                <span th:each="r : ${u.codesRoles}" class="st-badge st-neutre me-1" th:text="${r}"></span>
+                                <span th:if="${u.codesRoles.isEmpty()}" class="text-muted small">Collaborateur</span>
+                            </td>
+                            <td>
+                                <span class="st-badge" th:classappend="${u.actif} ? 'st-acquis' : 'st-neutre'"
+                                      th:text="${u.actif} ? 'Actif' : 'Désactivé'"></span>
+                                <span th:if="${enAttente.contains(u.id)}" class="st-badge st-encours">Modification en attente</span>
+                            </td>
+                            <td class="text-end">
+                                <a sec:authorize="hasRole('MAKER')" th:unless="${enAttente.contains(u.id)}"
+                                   th:href="@{/user/{id}/edit(id=${u.id})}" class="btn btn-sm btn-outline-secondary"
+                                   title="Demande de modification">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div th:replace="~{fragment/liste :: pagination(${page})}"></div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

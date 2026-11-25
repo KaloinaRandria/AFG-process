@@ -1,7 +1,20 @@
 package afg.process.afgprocess.controller;
 
 import afg.process.afgprocess.dto.SuiviLigne;
+import afg.process.afgprocess.controller.support.ListeTri;
+import afg.process.afgprocess.dto.filtre.EvaluationFiltre;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import afg.process.afgprocess.model.evaluation.Evaluation;
+import afg.process.afgprocess.model.evaluation.ResultatEvaluation;
 import afg.process.afgprocess.model.utilisateur.Utilisateur;
 import afg.process.afgprocess.service.evaluation.EvaluationService;
 import afg.process.afgprocess.service.exception.MetierException;
@@ -52,7 +65,7 @@ public class EvaluationController {
     @GetMapping("/{id:\\d+}")
     public String quiz(@PathVariable Integer id, @AuthenticationPrincipal Utilisateur moi, Model model) {
         model.addAttribute("quiz", evaluationService.quiz(id, moi));
-        return "evaluation/quiz";
+        return "evaluation/quiz-saisie";
     }
 
     /** Les réponses arrivent sous la forme reponse_{id de ligne}={id du choix}. */
@@ -77,27 +90,71 @@ public class EvaluationController {
     public String resultat(@PathVariable Integer id, @AuthenticationPrincipal Utilisateur moi, Model model) {
         model.addAttribute("evaluation", evaluationService.resultat(id, moi));
         model.addAttribute("moi", moi);
-        return "evaluation/resultat";
+        return "evaluation/resultat-fiche";
     }
+
+    // ── Listes ───────────────────────────────────────────────────────────────
+
+    private static final ListeTri TRI_MES_EVALUATIONS = ListeTri.par(Sort.by(Sort.Direction.DESC, "dateFin"),
+            "dateFin", "procedure.reference", "procedure.direction.code", "note");
+
+    private static final ListeTri TRI_SUIVI = ListeTri.par(Sort.by(Sort.Direction.DESC, "dateFin"),
+            "dateFin", "utilisateur.nom", "procedure.reference", "procedure.direction.code", "note", "resultat");
 
     @GetMapping("/mes-evaluations")
-    public String mesEvaluations(@AuthenticationPrincipal Utilisateur moi, Model model) {
-        model.addAttribute("evaluations", evaluationService.historique(moi));
-        return "evaluation/mes-evaluations";
+    public String mesEvaluations(@ModelAttribute("filtre") EvaluationFiltre filtre,
+                                 @PageableDefault(size = 20) Pageable pageable,
+                                 @AuthenticationPrincipal Utilisateur moi, Model model) {
+        model.addAttribute("page", evaluationService.mesEvaluations(filtre, moi, TRI_MES_EVALUATIONS.appliquer(pageable)));
+        model.addAttribute("directions", directionService.toutes());
+        return "evaluation/mes-evaluations-liste";
     }
 
-    /** Suivi (administrateurs) : situation actuelle par collaborateur et procédure, et historique complet. */
+    /** Suivi (administrateurs) : situation actuelle par collaborateur et procédure, ou historique complet. */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/suivi")
-    public String suivi(Model model) {
-        List<Evaluation> terminees = evaluationService.toutesTerminees();
-        List<SuiviLigne> situation = evaluationService.situationActuelle(terminees);
-        model.addAttribute("situation", situation);
-        model.addAttribute("historique", terminees);
-        model.addAttribute("nbFormationRequise", situation.stream().filter(l -> l.derniere().isFormationRequise()).count());
-        model.addAttribute("nbAcquis", situation.stream().filter(l -> !l.derniere().isFormationRequise()).count());
+    public String suivi(@ModelAttribute("filtre") EvaluationFiltre filtre, @PageableDefault(size = 20) Pageable pageable,
+                        Model model) {
+        model.addAttribute("page", evaluationService.suivi(filtre, TRI_SUIVI.appliquer(pageable)));
+        Map<ResultatEvaluation, Long> compteurs = evaluationService.compterParResultat(filtre);
+        model.addAttribute("nbAcquis", compteurs.get(ResultatEvaluation.ACQUIS));
+        model.addAttribute("nbFormationRequise", compteurs.get(ResultatEvaluation.FORMATION_REQUISE));
         model.addAttribute("directions", directionService.toutes());
         model.addAttribute("procedures", procedureService.toutes());
-        return "evaluation/suivi";
+        return "evaluation/suivi-liste";
+    }
+
+    /** Export CSV (Excel) du suivi, avec les filtres et le tri affichés. */
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/suivi/export")
+    public ResponseEntity<byte[]> exporterSuivi(@ModelAttribute("filtre") EvaluationFiltre filtre, Sort sort) {
+        List<SuiviLigne> lignes = evaluationService.suiviComplet(filtre, TRI_SUIVI.appliquer(sort));
+        DateTimeFormatter date = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        StringBuilder csv = new StringBuilder().append('﻿');   // BOM : accents corrects à l'ouverture dans Excel
+        csv.append("Collaborateur;Mail;Direction du collaborateur;Procédure;Titre;Direction de la procédure;Note;Sur;Résultat;Tentatives;Date\r\n");
+        for (SuiviLigne l : lignes) {
+            Evaluation e = l.derniere();
+            Utilisateur u = e.getUtilisateur();
+            csv.append(String.join(";",
+                    cellule(u.getNomComplet()), cellule(u.getMail()),
+                    cellule(u.getDirection() == null ? "" : u.getDirection().getCode()),
+                    cellule(e.getProcedure().getReference()), cellule(e.getProcedure().getTitre()),
+                    cellule(e.getProcedure().getDirection().getCode()),
+                    String.valueOf(e.getNote()), String.valueOf(e.getNbQuestions()),
+                    cellule(e.getResultat().getLibelle()), String.valueOf(l.tentatives()),
+                    e.getDateFin().format(date))).append("\r\n");
+        }
+        String nom = "suivi-" + (filtre.isHistorique() ? "historique" : "situation") + "-" + LocalDate.now() + ".csv";
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(nom).build().toString())
+                .body(csv.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Cellule CSV : entre guillemets si besoin ; une formule (=, +, -, @) est neutralisée. */
+    private static String cellule(String valeur) {
+        if (valeur == null) return "";
+        String v = valeur.matches("^[=+\\-@].*") ? "'" + valeur : valeur;
+        return v.matches("(?s).*[;\"\\r\\n].*") ? "\"" + v.replace("\"", "\"\"") + "\"" : v;
     }
 }

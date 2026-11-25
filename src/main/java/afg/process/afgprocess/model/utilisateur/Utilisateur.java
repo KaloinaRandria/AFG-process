@@ -8,6 +8,8 @@ import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Utilisateur autorisé dans l'application. Le mot de passe n'est pas stocké :
@@ -48,8 +50,17 @@ public class Utilisateur {
     @Column(name = "actif", nullable = false, columnDefinition = "boolean not null default true")
     private boolean actif = true;
 
+    public boolean hasRole(RoleApplication role) {
+        return roles.stream().anyMatch(r -> role.name().equals(r.getRole()));
+    }
+
     public boolean isAdmin() {
-        return roles.stream().anyMatch(r -> "ADMIN".equals(r.getRole()));
+        return hasRole(RoleApplication.ADMIN);
+    }
+
+    /** Codes des rôles, triés (ex. [ADMIN, IT]). */
+    public Set<String> getCodesRoles() {
+        return roles.stream().map(Role::getRole).collect(Collectors.toCollection(TreeSet::new));
     }
 
     public String getNomComplet() {

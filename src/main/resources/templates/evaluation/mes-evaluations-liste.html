@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Mes évaluations</title>
+    <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
+    <th:block th:insert="~{fragment/font :: font}"></th:block>
+    <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
+</head>
+<body>
+<div th:replace="~{fragment/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <section>
+        <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 page-actions gap-2">
+            <h1><i class="fas fa-history"></i> Mes évaluations</h1>
+            <a th:href="@{/procedure/list}" class="btn btn-gradient-blue"><i class="fas fa-book me-1"></i> Procédures</a>
+        </div>
+
+        <form th:replace="~{fragment/liste :: filtres(~{::champs}, ${filtre.actif}, '')}">
+            <th:block th:ref="champs">
+                <div class="col-md-4 col-xl-3">
+                    <label class="form-label" for="q">Procédure</label>
+                    <input type="search" class="form-control form-control-sm" id="q" name="q" th:value="${filtre.q}"
+                           placeholder="Référence ou titre…">
+                </div>
+                <div class="col-md-4 col-xl-3">
+                    <label class="form-label" for="direction">Direction</label>
+                    <select class="form-select form-select-sm" id="direction" name="direction">
+                        <option value="">Toutes</option>
+                        <option th:each="d : ${directions}" th:value="${d.id}" th:text="${d.nomAffiche}"
+                                th:selected="${filtre.direction == d.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="resultat">Résultat</label>
+                    <select class="form-select form-select-sm" id="resultat" name="resultat">
+                        <option value="">Tous</option>
+                        <option th:each="r : ${resultats}"
+                                th:value="${r}" th:text="${r.libelle}" th:selected="${filtre.resultat == r}"></option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3 col-xl-auto">
+                    <label class="form-label" for="du">Du</label>
+                    <input type="date" class="form-control form-control-sm" id="du" name="du" th:value="${filtre.du}">
+                </div>
+                <div class="col-6 col-md-3 col-xl-auto">
+                    <label class="form-label" for="au">Au</label>
+                    <input type="date" class="form-control form-control-sm" id="au" name="au" th:value="${filtre.au}">
+                </div>
+            </th:block>
+        </form>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div th:if="${page.empty}" class="text-center text-muted py-5">
+                    <th:block th:if="${filtre.actif}">Aucune évaluation ne correspond aux filtres.</th:block>
+                    <th:block th:unless="${filtre.actif}">Vous n'avez encore passé aucun quiz.
+                        <a th:href="@{/procedure/list}">Choisir une procédure</a>.</th:block>
+                </div>
+                <div class="table-responsive" th:unless="${page.empty}">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th th:replace="~{fragment/liste :: tri('Date', 'dateFin')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Procédure', 'procedure.reference')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Direction', 'procedure.direction.code')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Note', 'note')}"></th>
+                            <th>Résultat</th>
+                            <th class="text-end">Détail</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="e : ${page.content}">
+                            <td th:text="${#temporals.format(e.dateFin, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td>
+                                <div class="pr-ref" th:text="${e.procedure.reference}"></div>
+                                <span class="pr-titre" th:text="${e.procedure.titre}"></span>
+                            </td>
+                            <td th:text="${e.procedure.direction.code}"></td>
+                            <td><b th:text="${e.note}"></b> / <span th:text="${e.nbQuestions}"></span></td>
+                            <td>
+                                <span class="st-badge" th:classappend="${e.formationRequise} ? 'st-formation' : 'st-acquis'"
+                                      th:text="${e.resultat.libelle}"></span>
+                            </td>
+                            <td class="text-end">
+                                <a th:href="@{/evaluation/{id}/resultat(id=${e.id})}" class="btn btn-sm btn-outline-secondary"
+                                   title="Voir le détail"><i class="fas fa-eye"></i></a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div th:replace="~{fragment/liste :: pagination(${page})}"></div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

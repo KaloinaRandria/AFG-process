@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="${utilisateur.id == 0} ? 'Insérer un utilisateur' : 'Modifier un utilisateur'">Utilisateur</title>
+    <title th:text="${utilisateur.id == 0} ? 'Demande de création' : 'Demande de modification'">Utilisateur</title>
     <th:block th:insert="~{fragment/load_css :: load_css}"></th:block>
     <th:block th:insert="~{fragment/font :: font}"></th:block>
     <th:block th:insert="~{fragment/load_script :: load_script}"></th:block>
@@ -15,33 +15,43 @@
         <div th:replace="~{fragment/load_pop_up :: pop_up}"></div>
 
         <div class="d-flex justify-content-between align-items-center mb-4 page-actions gap-2">
-            <h1><i class="fas fa-user"></i> <span th:text="${nouveau} ? 'Insérer un utilisateur' : 'Modifier un utilisateur'"></span></h1>
-            <a th:href="@{/user/list}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Liste</a>
+            <h1>
+                <i class="fas" th:classappend="${nouveau} ? 'fa-user-plus' : 'fa-user-edit'"></i>
+                <span th:text="${nouveau} ? 'Demande de création d’utilisateur' : 'Demande de modification d’utilisateur'"></span>
+            </h1>
+            <a th:href="@{/user/list}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Utilisateurs</a>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="fas fa-user-check"></i>
+            Circuit de validation : votre saisie crée une <b>demande</b>. Le compte ne sera
+            <span th:text="${nouveau} ? 'créé' : 'modifié'"></span> qu'après validation par un <b>CHECKER</b>
+            (une autre personne que vous).
         </div>
 
         <form th:action="@{/user/save}" method="post" data-chargement="Enregistrement…">
             <input type="hidden" name="id" th:if="${!nouveau}" th:value="${u.id}">
-            <div class="card" style="max-width: 760px">
+            <div class="card">
                 <div class="card-body">
                     <p class="text-muted small">
-                        Le mot de passe est celui de l'Active Directory : seul le mail doit correspondre
+                        Le mot de passe est celui de l'Active Directory : le mail doit correspondre
                         au compte AD du collaborateur.
                     </p>
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-md-6 col-xl-4">
                             <label class="form-label" for="mail">Mail *</label>
                             <input type="email" class="form-control" id="mail" name="mail" th:value="${u.mail}" required
                                    placeholder="prenom.nom@afgbank.mg">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-xl-4">
                             <label class="form-label" for="prenom">Prénom</label>
                             <input type="text" class="form-control" id="prenom" name="prenom" th:value="${u.prenom}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-xl-4">
                             <label class="form-label" for="nom">Nom</label>
                             <input type="text" class="form-control" id="nom" name="nom" th:value="${u.nom}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-xl-4">
                             <label class="form-label" for="idDirection">Direction</label>
                             <select class="form-select" id="idDirection" name="idDirection">
                                 <option value="">—</option>
@@ -49,22 +59,38 @@
                                         th:selected="${u.direction != null and u.direction.id == d.id}"></option>
                             </select>
                         </div>
-                        <div class="col-md-6 d-flex flex-column justify-content-end gap-1">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="admin" name="admin" value="true"
-                                       th:checked="${u.admin}">
-                                <label class="form-check-label" for="admin">Administrateur (gère procédures, questions, suivi)</label>
-                            </div>
+                        <div class="col-md-6 col-xl-8 d-flex align-items-end">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="actif" name="actif" value="true"
                                        th:checked="${u.actif}">
-                                <label class="form-check-label" for="actif">Compte actif</label>
+                                <label class="form-check-label" for="actif">Compte actif (peut se connecter)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-section-title"><i class="fas fa-user-shield"></i> Rôles</div>
+                            <p class="small text-muted mb-2">
+                                Sans rôle, le compte est un collaborateur : il consulte les procédures et passe les quiz.
+                            </p>
+                            <div class="row g-2">
+                                <div class="col-md-6 col-xl-3" th:each="r : ${roles}">
+                                    <label class="quiz-choix mb-0 h-100">
+                                        <input class="form-check-input" type="checkbox" name="roles" th:value="${r.name()}"
+                                               th:checked="${u.codesRoles.contains(r.name())}">
+                                        <span>
+                                            <b th:text="${r.libelle}"></b> <span class="pr-ref" th:text="${r.name()}"></span>
+                                            <span class="d-block small text-muted" th:text="${r.description}"></span>
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer text-end">
-                    <button type="submit" class="btn btn-gradient-green px-4"><i class="fas fa-save me-1"></i> Enregistrer</button>
+                    <button type="submit" class="btn btn-gradient-green px-4">
+                        <i class="fas fa-paper-plane me-1"></i> Soumettre pour validation
+                    </button>
                 </div>
             </div>
         </form>

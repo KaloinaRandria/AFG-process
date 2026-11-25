@@ -79,6 +79,6 @@ public class QuestionController {
         model.addAttribute("nbActives", questions.stream().filter(Question::isActif).count());
         model.addAttribute("nbQuestionsQuiz", procedureService.getNbQuestionsQuiz());
         model.addAttribute("form", form);
-        return "procedure/questions";
+        return "procedure/question-saisie-liste";
     }
 }

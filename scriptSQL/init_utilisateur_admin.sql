@@ -1,5 +1,5 @@
 -- Initialisation : rôle ADMIN et premier compte autorisé à se connecter.
--- À exécuter une fois sur la base PROCESS_UAT, après le premier démarrage
+-- À exécuter une fois sur la base de l'application (PROCESS_UAT, PROCESS_PREPROD…), après le premier démarrage
 -- de l'application (Hibernate crée les tables role, utilisateur, utilisateur_role).
 
 INSERT INTO role (role)

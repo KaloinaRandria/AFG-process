@@ -1,6 +1,8 @@
 package afg.process.afgprocess.service.procedure;
 
 import afg.process.afgprocess.model.procedure.Direction;
+import afg.process.afgprocess.model.procedure.Procedure;
+import afg.process.afgprocess.service.stockage.StockageService;
 import afg.process.afgprocess.repository.procedure.DirectionRepository;
 import afg.process.afgprocess.repository.procedure.ProcedureRepository;
 import afg.process.afgprocess.service.exception.MetierException;
@@ -17,10 +19,13 @@ public class DirectionService {
 
     private final DirectionRepository directionRepository;
     private final ProcedureRepository procedureRepository;
+    private final StockageService stockageService;
 
-    public DirectionService(DirectionRepository directionRepository, ProcedureRepository procedureRepository) {
+    public DirectionService(DirectionRepository directionRepository, ProcedureRepository procedureRepository,
+                            StockageService stockageService) {
         this.directionRepository = directionRepository;
         this.procedureRepository = procedureRepository;
+        this.stockageService = stockageService;
     }
 
     public List<Direction> toutes() {
@@ -56,9 +61,24 @@ public class DirectionService {
                 });
 
         Direction d = id == null ? new Direction() : get(id);
+        if (d.getCode() != null && !d.getCode().equals(codeNormalise)) {
+            renommerDossier(d, codeNormalise);
+        }
         d.setCode(codeNormalise);
         d.setLibelle(libelle.trim());
         d.setActif(actif);
         return directionRepository.save(d);
+    }
+
+    /** Le dossier des PDF porte le code de la direction : il est renommé avec lui, et les chemins mis à jour. */
+    private void renommerDossier(Direction d, String nouveauCode) {
+        String ancienDossier = stockageService.dossierDirection(d.getCode()) + "/";
+        String nouveauDossier = stockageService.dossierDirection(nouveauCode) + "/";
+        stockageService.renommerDossier(d.getCode(), nouveauCode);
+        for (Procedure p : procedureRepository.findByDirectionId(d.getId())) {
+            if (p.hasFichier() && p.getFichierStocke().startsWith(ancienDossier)) {
+                p.setFichierStocke(nouveauDossier + p.getFichierStocke().substring(ancienDossier.length()));
+            }
+        }
     }
 }

@@ -30,31 +30,59 @@
             <span class="st-badge st-formation">Formation requise</span> vous est indiquée.
         </p>
 
-        <div class="card">
-            <div class="card-header d-flex flex-wrap gap-2 align-items-center">
-                <label for="filtreDirection" class="form-label mb-0 me-1">Direction</label>
-                <select id="filtreDirection" class="form-select form-select-sm" style="max-width: 320px">
-                    <option value="">Toutes les directions</option>
-                    <option th:each="d : ${directions}" th:value="${d.code}" th:text="${d.nomAffiche}"></option>
-                </select>
-            </div>
-            <div class="card-body">
-                <div th:if="${#lists.isEmpty(procedures)}" class="ui-empty text-center text-muted py-4">
-                    Aucune procédure disponible pour le moment.
+        <form th:replace="~{fragment/liste :: filtres(~{::champs}, ${filtre.actif}, '')}">
+            <th:block th:ref="champs">
+                <div class="col-md-4 col-xl-3">
+                    <label class="form-label" for="q">Recherche</label>
+                    <input type="search" class="form-control form-control-sm" id="q" name="q" th:value="${filtre.q}"
+                           placeholder="Référence, titre, description…">
                 </div>
-                <div class="table-responsive" th:unless="${#lists.isEmpty(procedures)}">
-                    <table id="tableProcedures" class="table table-hover align-middle w-100">
+                <div class="col-md-4 col-xl-3">
+                    <label class="form-label" for="direction">Direction</label>
+                    <select class="form-select form-select-sm" id="direction" name="direction">
+                        <option value="">Toutes</option>
+                        <option th:each="d : ${directions}" th:value="${d.id}" th:text="${d.nomAffiche}"
+                                th:selected="${filtre.direction == d.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <label class="form-label" for="resultat">Mon résultat</label>
+                    <select class="form-select form-select-sm" id="resultat" name="resultat">
+                        <option value="">Tous</option>
+                        <option value="ACQUIS" th:selected="${filtre.resultat == 'ACQUIS'}">Acquis</option>
+                        <option value="FORMATION_REQUISE" th:selected="${filtre.resultat == 'FORMATION_REQUISE'}">Formation requise</option>
+                        <option value="EN_COURS" th:selected="${filtre.resultat == 'EN_COURS'}">Quiz en cours</option>
+                        <option value="NON_EVALUEE" th:selected="${filtre.resultat == 'NON_EVALUEE'}">Non évaluée</option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-xl-2" sec:authorize="hasRole('ADMIN')">
+                    <label class="form-label" for="statut">Statut</label>
+                    <select class="form-select form-select-sm" id="statut" name="statut">
+                        <option value="">Toutes</option>
+                        <option value="ACTIVES" th:selected="${filtre.statut == 'ACTIVES'}">Actives</option>
+                        <option value="INACTIVES" th:selected="${filtre.statut == 'INACTIVES'}">Inactives</option>
+                    </select>
+                </div>
+            </th:block>
+        </form>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div th:if="${page.empty}" class="text-center text-muted py-5"
+                     th:text="${filtre.actif} ? 'Aucune procédure ne correspond aux filtres.' : 'Aucune procédure disponible pour le moment.'"></div>
+                <div class="table-responsive" th:unless="${page.empty}">
+                    <table class="table table-hover align-middle mb-0">
                         <thead>
                         <tr>
-                            <th>Procédure</th>
-                            <th>Direction</th>
+                            <th th:replace="~{fragment/liste :: tri('Procédure', 'reference')}"></th>
+                            <th th:replace="~{fragment/liste :: tri('Direction', 'direction.code')}"></th>
                             <th sec:authorize="hasRole('ADMIN')">Questions</th>
                             <th>Mon résultat</th>
-                            <th class="text-end no-sort">Actions</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="p : ${procedures}" th:with="e=${derniers[p.id]}, nbq=${nbQuestions[p.id] ?: 0}"
+                        <tr th:each="p : ${page.content}" th:with="e=${derniers[p.id]}, nbq=${nbQuestions[p.id] ?: 0}"
                             th:classappend="${p.actif and p.direction.actif} ? '' : 'q-inactive'">
                             <td>
                                 <div class="pr-ref" th:text="${p.reference}"></div>
@@ -63,8 +91,8 @@
                                 <div class="pr-desc" th:if="${p.description}"
                                      th:text="${#strings.abbreviate(p.description, 140)}"></div>
                             </td>
-                            <td th:text="${p.direction.code}"></td>
-                            <td sec:authorize="hasRole('ADMIN')" th:attr="data-order=${nbq}">
+                            <td th:text="${p.direction.code}" th:title="${p.direction.libelle}"></td>
+                            <td sec:authorize="hasRole('ADMIN')">
                                 <a th:href="@{/procedure/{id}/questions(id=${p.id})}"
                                    th:class="${nbq >= nbQuestionsQuiz} ? 'text-success' : 'text-danger'"
                                    th:title="${nbq >= nbQuestionsQuiz} ? 'Quiz disponible' : 'Pas assez de questions : quiz indisponible'">
@@ -103,22 +131,9 @@
                     </table>
                 </div>
             </div>
+            <div th:replace="~{fragment/liste :: pagination(${page})}"></div>
         </div>
     </section>
 </div>
-<script>
-    $(function () {
-        const table = $('#tableProcedures').DataTable({
-            language: {url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'},
-            pageLength: 25,
-            order: [],
-            columnDefs: [{targets: 'no-sort', orderable: false}]
-        });
-        $('#filtreDirection').on('change', function () {
-            const v = this.value;
-            table.column(1).search(v ? '^' + $.fn.dataTable.util.escapeRegex(v) + '$' : '', true, false).draw();
-        });
-    });
-</script>
 </body>
 </html>
